@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#eeeadf">
+  <meta name="description" content="Nogal. Una pared propia para las obras que hablan de ti.">
+  <title>Nogal — Tu galería</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22/%3E">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="gallery.css">
+  <script src="api.js?v=origin-49976-1" defer></script>
+  <script src="usuarios.js?v=logout-1" defer></script>
+</head>
+<body>
+  <div class="gallery-scene" id="galleryScene" hidden>
+    <main class="gallery-main" id="galeria">
+      <div class="session-actions"><button class="logout-button" id="logoutButton" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M10 4H4v16h6m4-12 4 4-4 4m-6-4h12"/></svg><span>Cerrar sesión</span></button></div>
+      <p class="logout-error" id="logoutError" role="alert" hidden></p>
+      <header class="gallery-nameplate">
+        <div class="nameplate-frame frame">
+          <i class="rail top" aria-hidden="true"></i><i class="rail right" aria-hidden="true"></i><i class="rail bottom" aria-hidden="true"></i><i class="rail left" aria-hidden="true"></i>
+          <h1 tabindex="-1" id="galleryTitle">Nogal</h1>
+        </div>
+      </header>
+      <section class="collection-toolbar" aria-label="Herramientas de la colección">
+
+        <div class="toolbar-tools"><label class="gallery-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="10" cy="10" r="6.5"/><path d="m15 15 5 5"/></svg><input id="gallerySearch" type="search" placeholder="Buscar en la pared" aria-label="Buscar por título, artista o técnica"></label><button class="add-button" id="addArtwork" type="button"><span aria-hidden="true">＋</span> Añadir obra</button></div>
+      </section>
+      <div class="gallery-meta"><p><span class="demo-dot"></span> COLECCIÓN DE MUESTRA <span class="meta-divider">/</span> Las obras que añadas se conservan hasta recargar.</p><span id="resultsCount" role="status"></span></div>
+      <section class="gallery-wall" id="galleryWall" aria-label="Obras de la colección"></section>
+      <div class="empty-collection" id="emptyCollection" hidden><span aria-hidden="true">⌕</span><h2>Un pequeño espacio en blanco.</h2><p>No hay obras que coincidan con tu búsqueda.</p><button class="demo-entry" id="resetSearch" type="button">Ver toda la colección →</button></div>
+      <footer class="gallery-footer"><span>UNA PARED EN CALMA</span><span>HECHA PARA VOLVER</span><button id="backToTop" type="button" aria-label="Volver arriba">↑</button></footer>
+    </main>
+  </div>
+  <dialog class="art-dialog" id="artDialog" aria-labelledby="artDialogTitle"><button class="dialog-close" type="button" aria-label="Cerrar detalles" autofocus>×</button><div id="artDialogContent"></div></dialog>
+  <dialog class="add-dialog" id="addDialog" aria-labelledby="addDialogTitle">
+    <button class="dialog-close" type="button" aria-label="Cerrar formulario">×</button>
+    <p class="eyebrow">UNA NUEVA HISTORIA</p><h2 id="addDialogTitle">Un lugar en tu pared.</h2><p class="add-description">Añade esa obra que quieres volver a mirar.</p>
+    <div class="upload-layout">
+    <form id="artworkForm" class="artwork-form">
+      <label class="field form-wide upload-field">Adjuntar imagen<input id="artworkFile" name="imageFile" type="file" accept="image/*,.heic,.heif,.tif,.tiff,.avif" required aria-describedby="fileHelp"><span id="fileHelp">Selecciona una imagen de tu dispositivo. Máximo 25 MB.</span></label>
+      <label class="field form-wide">Título<input name="title" required maxlength="90" placeholder="Ej. Luz de invierno" autofocus></label>
+      <label class="field">Artista<input name="artist" required maxlength="80" placeholder="Nombre del artista"></label>
+      <label class="field">Año<input name="year" type="number" min="1000" required></label>
+      <label class="field">Técnica<input name="medium" required maxlength="80" placeholder="Óleo sobre lienzo"></label>
+      <label class="field">Tamaño del cuadro<select name="frameSize"><option value="20x30">20 × 30 cm</option><option value="30x40" selected>30 × 40 cm</option><option value="40x50">40 × 50 cm</option><option value="50x70">50 × 70 cm</option><option value="60x90">60 × 90 cm</option><option value="30x30">30 × 30 cm · cuadrado</option><option value="50x50">50 × 50 cm · cuadrado</option></select></label>
+      <label class="field">Categoría<select name="category"><option>Paisaje</option><option>Botánica</option><option>Abstracto</option><option>Otra</option></select></label>
+      <label class="field">Orientación<select name="orientation"><option value="portrait">Vertical</option><option value="landscape">Horizontal</option></select></label>
+      <label class="field form-wide">Cómo colocar la imagen<select name="imageFit"><option value="contain">Imagen completa · sin recortar</option><option value="cover">Llenar el cuadro · recortar bordes</option></select></label><label class="field form-wide">Una pequeña historia<textarea name="description" required maxlength="500" rows="3" placeholder="Qué te inspira de esta obra…"></textarea></label>
+      <p class="artwork-error form-wide" id="artworkError" role="alert" hidden></p>
+      <button class="submit form-wide" id="saveArtwork" type="submit" disabled><span>Añadir a mi pared</span><span aria-hidden="true">↗</span></button>
+      <p class="storage-note form-wide">Vista de muestra. Los cambios se perderán al recargar la página.</p>
+    </form>
+    <aside class="upload-preview" aria-label="Vista previa del cuadro"><p class="eyebrow">ASÍ QUEDARÁ EN TU PARED</p><div class="preview-wall" id="framePreview"></div><p class="preview-measurement" id="previewMeasurement"></p><p class="preview-file" id="previewFile" role="status">Adjunta una imagen para probarla.</p><p class="preview-note">Proporción del formato elegido; escala de pantalla ilustrativa. Algunos formatos, como HEIC, TIFF o RAW, necesitan convertirse a JPG o PNG si tu navegador no los abre.</p></aside>
+    </div>
+  </dialog>
+</body>
+</html>
+
+
+
+
+

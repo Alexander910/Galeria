@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="180" height="900" viewBox="0 0 180 900"><g transform="translate(180 0) rotate(90)">
+<defs>
+  <linearGradient id="base" x2="0" y2="1"><stop stop-color="#815333"/><stop offset=".28" stop-color="#a07048"/><stop offset=".54" stop-color="#805030"/><stop offset=".78" stop-color="#98633c"/><stop offset="1" stop-color="#684124"/></linearGradient>
+  <filter id="grain" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".004 .17" numOctaves="3" seed="18" stitchTiles="stitch"/><feColorMatrix type="matrix" values="0 0 0 0 .20 0 0 0 0 .095 0 0 0 0 .035 1.1 0 0 0 -.29"/><feBlend in="SourceGraphic" mode="multiply"/></filter>
+  <filter id="warp"><feTurbulence type="turbulence" baseFrequency=".005 .025" numOctaves="2" seed="6" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="14" xChannelSelector="R" yChannelSelector="G"/></filter>
+</defs>
+<path fill="url(#base)" filter="url(#grain)" d="M0 0h900v180H0z"/>
+<g fill="none" filter="url(#warp)" stroke="#3f2515" stroke-width=".85" opacity=".32">
+<path d="M-20 12Q190 28 390 13T920 20M-20 25Q180 15 420 30T920 26M-20 40Q140 54 320 38T920 44M-20 59Q200 40 410 57T920 55M-20 71Q230 88 420 70T920 75M-20 91Q180 74 390 95T920 92M-20 110Q250 93 480 114T920 107M-20 133Q200 149 470 131T920 136M-20 151Q200 137 430 154T920 150M-20 167Q160 184 460 164T920 171"/>
+<path d="M-20 101Q210 108 309 96Q350 78 408 96Q520 114 920 100M-20 105Q210 114 309 104Q350 90 408 104Q520 122 920 106"/>
+</g>
+<g fill="none" stroke="#edbf8666" stroke-width=".65"><path d="M0 33Q270 42 470 32T900 37M0 65Q230 58 430 67T900 63M0 124Q190 113 430 127T900 121M0 159Q240 165 470 156T900 160"/></g>
+</g></svg>

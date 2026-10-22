@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#eeeadf">
+  <meta name="description" content="Nogal. Una pared propia para las obras que hablan de ti.">
+  <title>Nogal — Entra a tu galería</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22/%3E">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="gallery.css">
+  <script src="api.js?v=origin-49976-1" defer></script>
+  <script src="login.js?v=origin-49976-1" defer></script>
+</head>
+<body>
+  <div class="room" id="room">
+    <main class="layout">
+      <section class="story" aria-labelledby="story-title">
+        <h1 id="story-title">Hay lugares<br>que se <em>iluminan<br> contigo.</em></h1>
+
+        <div class="lamp-scene">
+          <div class="light-halo" aria-hidden="true"></div>
+          <div class="lamp" aria-hidden="true">
+            <div class="lamp-shade"></div><div class="bulb"></div><div class="light-beam"></div>
+            <div class="lamp-neck"></div><div class="lamp-stem"></div><div class="lamp-base"></div>
+          </div>
+          <svg class="cord" viewBox="0 0 90 220" aria-hidden="true"><path id="cordPath" d="M 45 0 Q 45 40 45 80"/></svg>
+          <button class="pull" id="lampSwitch" type="button" aria-label="Encender lámpara y mostrar el acceso" aria-pressed="false" aria-controls="loginPanel"><span></span></button>
+          <div class="table-top" aria-hidden="true"></div>
+          <div class="motes" id="motes" aria-hidden="true"></div>
+        </div>
+      </section>
+
+      <section class="access" aria-label="Acceso a la galería">
+        <div class="frame-wire" aria-hidden="true"></div>
+        <div class="frame" id="frame">
+          <i class="rail top" aria-hidden="true"></i><i class="rail right" aria-hidden="true"></i><i class="rail bottom" aria-hidden="true"></i><i class="rail left" aria-hidden="true"></i>
+          <div class="mat">
+            <div class="closed-card" id="closedCard"><p>Todo empieza<br>con un poco de luz.</p><span class="closed-note">ENCIENDE LA LÁMPARA PARA ENTRAR</span></div>
+            <div class="login-panel" id="loginPanel" inert aria-hidden="true">
+              <p class="eyebrow centered">BIENVENIDO A TU GALERÍA</p>
+              <h2>Qué bueno verte.</h2>
+              <p class="card-intro">Un espacio para volver a lo que te inspira.</p>
+              <form id="loginForm">
+                <label class="field" for="email">Correo electrónico<input id="email" name="email" type="email" autocomplete="username" placeholder="nombre@correo.com" required maxlength="254"></label>
+                <label class="field" for="password">Contraseña<span class="password-wrap"><input id="password" name="password" type="password" autocomplete="current-password" placeholder="Tu contraseña" required minlength="6"><button class="eye" id="togglePassword" type="button" aria-label="Mostrar contraseña" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/><path class="eye-slash" d="m4 3 16 18"/></svg></button></span></label>
+                <button class="submit" type="submit"><span>Entrar a mi galería</span><span aria-hidden="true">↗</span></button>
+                <p class="form-message" id="formMessage" role="status" hidden></p>
+              </form>
+              <button class="demo-entry" id="exploreGallery" type="button">Explorar galería de muestra <span aria-hidden="true">→</span></button>
+              <div class="card-divider" aria-hidden="true"></div>
+              <p class="card-foot">Tu mirada merece un lugar propio.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+    <p class="sr-only" id="lampStatus" role="status">Lámpara apagada.</p>
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,218 @@
+NOGAL - GUÍA DE PRUEBAS PARA COLABORADORES
+========================================
+
+1. QUÉ CONTIENE EL PROYECTO
+--------------------------
+- login.html / login.js: acceso con lámpara animada.
+- usuarios.html / usuarios.js: galería, carga de imágenes y vista previa.
+- api.js: conexión con la API y detección del servidor local.
+- server.js: servidor HTTP, usuarios y sesiones.
+- style.css / gallery.css: diseño del login y de la galería.
+- assets/: tipografías, texturas y obras de muestra; subir esta carpeta completa.
+- index.html: redirige al login.
+- fiveserver.config.js: alternativa de ejecución con Five Server.
+- .gitignore: excluye los datos locales de usuarios.
+
+2. REQUISITOS
+-------------
+- Git instalado y permiso de acceso al repositorio que comparta el responsable.
+- Node.js instalado y disponible en la terminal.
+  Esta versión del proyecto se comprobó con Node.js v26.3.0.
+- Un navegador actualizado.
+- Editor de código a elección. VS Code y Five Server son opcionales.
+
+Comprobar en una terminal:
+  git --version
+  node --version
+
+No hace falta ejecutar npm install: el servidor utiliza módulos de Node.js
+incluidos en su instalación. Tampoco se necesita una cuenta de AWS o MongoDB.
+
+3. DESCARGAR EL PROYECTO DESDE GIT
+---------------------------------
+Primera vez:
+  git clone URL_DEL_REPOSITORIO
+  cd NOMBRE_DE_LA_CARPETA_CLONADA
+
+Reemplazar los nombres anteriores por la URL y la carpeta del repositorio real.
+Si el repositorio contiene varios proyectos, entrar después en Proyecto.
+La carpeta correcta es la que contiene server.js, login.html y usuarios.html.
+
+Si ya se descargó:
+  git status
+  git pull --ff-only
+
+Antes de actualizar, guardar o confirmar los cambios propios. Si Git informa
+que las ramas divergieron, resolverlo con el equipo; no forzar la actualización.
+No se necesita copiar la carpeta data/ de otro colaborador.
+
+4. INICIAR LA APLICACIÓN (OPCIÓN RECOMENDADA)
+--------------------------------------------
+Desde la carpeta que contiene server.js:
+  node server.js
+
+La terminal debe mostrar:
+  Nogal: http://127.0.0.1:4173
+
+Mantener esa terminal abierta y visitar:
+  http://127.0.0.1:4173/login.html
+
+No abrir el HTML haciendo doble clic ni mediante file://.
+Usar el puerto 4173 para evitar depender del servidor de archivos del editor.
+No cambiar PORT para estas pruebas: api.js utiliza 4173 como servidor alternativo.
+
+Para detener el servidor: Ctrl + C en su terminal.
+Después de modificar server.js, detenerlo y ejecutar node server.js otra vez.
+Después de modificar HTML, CSS o JavaScript del navegador, recargar la página.
+Si se ve una versión anterior, usar Ctrl + F5 (o la recarga sin caché del navegador).
+
+5. USUARIO LOCAL DE PRUEBA
+--------------------------
+Nombre:     Aldo
+Correo:     aldo@nogal.local
+Contraseña: Nogal2026!
+
+La cuenta se crea automáticamente en el primer arranque de cada colaborador.
+Es una cuenta de demostración local, no una cuenta de Outlook u otro proveedor.
+Escribir el correo y la contraseña indicados; no usar las credenciales personales
+que el navegador pueda haber autocompletado.
+
+6. PRUEBAS MANUALES Y RESULTADOS ESPERADOS
+-----------------------------------------
+A. Lámpara y login
+   1) Abrir /login.html sin una sesión previa.
+   2) Comprobar que la escena comienza oscura.
+   3) Tirar de la cuerda o hacer clic en el tirador.
+   4) La escena recupera sus colores cálidos y aparece el formulario.
+   5) Probar el botón para mostrar y ocultar la contraseña.
+
+B. Credenciales incorrectas
+   1) Introducir el correo de prueba y una contraseña incorrecta de 6 o más caracteres.
+   2) El acceso debe rechazarse y permanecer en el login.
+   3) Evitar muchos intentos seguidos: existe un límite de intentos por minuto.
+
+C. Inicio de sesión correcto
+   1) Usar aldo@nogal.local y Nogal2026!.
+   2) Se debe navegar a usuarios.html.
+   3) El marco de madera superior debe mostrar Aldo.
+   4) Se deben ver las obras de muestra y el botón Añadir obra.
+   5) Recargar: la sesión debe seguir activa y conservar el nombre.
+
+D. Adjuntar imágenes y probar cuadros
+   1) Pulsar Añadir obra y adjuntar una imagen local (máximo 25 MB).
+   2) La imagen debe aparecer en la vista previa del marco.
+   3) Elegir distintos tamaños predefinidos.
+   4) Cambiar entre vertical y horizontal; comprobar la proporción y las medidas.
+   5) Elegir un tamaño cuadrado: la orientación debe quedar deshabilitada.
+   6) Comparar Imagen completa con Llenar el cuadro para ver el recorte.
+   7) Completar los campos y pulsar Añadir a mi pared.
+   8) La obra debe aparecer en la galería con el formato y ajuste elegidos.
+   9) Abrirla: comprobar imagen, título, autoría, técnica, descripción y medidas.
+  10) Cerrar la ficha con el botón de cierre y también con Escape.
+
+   Probar JPG, PNG, WebP o SVG. La compatibilidad depende del navegador.
+   HEIC, TIFF y RAW pueden requerir conversión previa a JPG o PNG.
+   Un archivo ilegible debe mostrar un error y no habilitar el guardado.
+   Los archivos adjuntos permanecen en el navegador: aún no se suben al servidor.
+
+E. Búsqueda
+   1) Buscar una obra por título o artista.
+   2) Comprobar que aparecen las coincidencias.
+   3) Buscar un texto que no exista: debe mostrarse el estado sin resultados.
+   4) Limpiar la búsqueda o usar Ver toda la colección.
+
+F. Cerrar sesión y acceso directo
+   1) Pulsar Cerrar sesión, arriba a la derecha.
+   2) Se debe volver a login.html.
+   3) Intentar abrir /usuarios.html sin el parámetro demo: debe regresar al login.
+   4) Usar Atrás: la página debe volver a comprobar la sesión.
+   5) Iniciar sesión otra vez para continuar las pruebas.
+
+G. Muestra sin autenticación
+   Desde el login, Explorar galería de muestra abre usuarios.html?demo=1.
+   En esa vista el letrero muestra Nogal y no prueba el acceso de un usuario.
+   Para verificar el nombre Aldo, usar el formulario de inicio de sesión.
+
+H. Pantallas pequeñas
+   Probar una ventana estrecha o un móvil emulado en el navegador.
+   Comprobar que los botones, formularios y vista previa sean accesibles.
+
+7. DATOS, SESIONES Y LIMITACIONES ACTUALES
+-----------------------------------------
+- data/users.json guarda documentos de usuarios y se conserva entre reinicios.
+- Es almacenamiento documental JSON local de pruebas; no un motor NoSQL externo.
+- Las contraseñas se guardan con salt y hash scrypt, no en texto plano en users.json.
+- Las sesiones se guardan en memoria del servidor y caducan a las 8 horas.
+- Reiniciar Node o Five Server invalida las sesiones: volver a iniciar sesión.
+- La cookie de sesión es HttpOnly y se elimina al cerrar sesión.
+- Las obras añadidas y sus imágenes son temporales: se pierden al recargar o salir.
+- Cada colaborador utiliza sus datos locales; no se sincronizan mediante Git.
+- Con Node, /data/users.json debe responder 404 si se intenta abrir desde el navegador.
+
+8. FIVE SERVER (ALTERNATIVA OPCIONAL)
+------------------------------------
+1) Abrir específicamente la carpeta Proyecto en VS Code.
+2) Usar la extensión Five Server, que lee fiveserver.config.js.
+3) Detener y volver a iniciar la extensión después de cambiar su configuración.
+4) Abrir el login en la dirección que indique Five Server; se configura el puerto 5500.
+
+La configuración integra la API en Five Server, sin otro proceso Node aparte.
+Live Server y Five Server son extensiones diferentes: un servidor de archivos
+sin esta configuración no implementa POST /api/login y puede responder 405.
+La solución más sencilla para todos los colaboradores es la sección 4.
+
+api.js también puede localizar Node en 4173 desde otra vista local.
+Actualmente se autorizan los orígenes locales 4173, 5500, 5501 y 49976.
+Si el editor elige otro puerto, usar directamente http://127.0.0.1:4173/login.html;
+no ampliar los permisos a cualquier origen como solución al error.
+
+9. QUÉ SUBIR A GIT Y CÓMO COLABORAR
+----------------------------------
+El responsable debe compartir la URL real del repositorio cuando lo publique.
+Subir las páginas, scripts, estilos, server.js, fiveserver.config.js, assets/,
+.gitignore y esta guía. Las capturas *-preview.png son opcionales para documentar.
+No subir data/: .gitignore ya la excluye. No añadir contraseñas personales o
+archivos locales con información privada. La credencial descrita aquí es de prueba.
+
+Flujo sugerido para cambios:
+  git status
+  git pull --ff-only
+  git switch -c descripcion-del-cambio
+
+Después de modificar y realizar las pruebas correspondientes:
+  git diff
+  git add ARCHIVOS_QUE_CAMBIASTE
+  git commit -m "Describe el cambio realizado"
+  git push -u origin descripcion-del-cambio
+
+Reemplazar los nombres de ejemplo por la rama y los archivos reales.
+Crear una solicitud de revisión en la plataforma donde se aloje el repositorio,
+indicando qué cambió y cuáles de las pruebas de esta guía se realizaron.
+Si el proyecto aún no está en un repositorio, el responsable debe crearlo y
+publicarlo antes de que otros colaboradores puedan usar git clone.
+
+10. SOLUCIÓN DE PROBLEMAS
+-------------------------
+- node no se reconoce:
+  Instalar Node.js y abrir una terminal nueva; comprobar node --version.
+- EADDRINUSE / puerto 4173 ocupado:
+  Revisar la terminal del servidor ya iniciado. Usar una sola instancia del proyecto.
+- HTTP 405 en /api/login:
+  Se está usando un servidor sin la API. Arrancar node server.js y abrir el puerto 4173,
+  o reiniciar Five Server desde Proyecto para que cargue su configuración.
+- No se encontró la API / Failed to fetch:
+  Comprobar que la terminal del servidor siga abierta y usar la URL del puerto 4173.
+- Credenciales rechazadas:
+  Verificar la cuenta de la sección 5 y el autocompletado del navegador.
+- HTTP 429:
+  Esperar un minuto antes de volver a intentar el acceso.
+- Se abre la galería sin mostrar el login:
+  Ya existe una sesión. Cerrar sesión o probar en una ventana privada.
+- Desaparecieron las fotos añadidas al recargar:
+  Es la limitación actual del almacenamiento temporal de la colección.
+- No se carga un formato de imagen:
+  Probar una copia convertida a JPG, PNG o WebP.
+
+Al reportar un fallo, incluir: URL completa con puerto, pasos para reproducirlo,
+resultado esperado, mensaje de la consola del navegador (F12 > Consola), salida
+de la terminal de Node y versión de Node. No adjuntar contraseñas ni cookies.
