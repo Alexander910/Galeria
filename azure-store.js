@@ -157,4 +157,10 @@ async function deleteSession(token) {
   catch (error) { if (error.code !== 404) throw error; }
 }
 
-module.exports = { enabled, initialize, list, saveWork, deleteWork, saveUser, listUsers, getUser, image, getSession, setSession, deleteSession };
+async function saveImage(filename, bytes, type) {
+  await images.getBlockBlobClient(filename).uploadData(bytes, { blobHTTPHeaders: { blobContentType: `image/${type}` } });
+}
+async function deleteImage(filename) {
+  await images.getBlockBlobClient(filename).deleteIfExists();
+}
+module.exports = { enabled, initialize, list, saveWork, deleteWork, saveUser, listUsers, getUser, image, saveImage, deleteImage, getSession, setSession, deleteSession };

@@ -37,7 +37,8 @@ function json(response, status, body, headers = {}) {
 }
 function publicUser(user) {
   return { id: user.id, name: user.name, username: user.username,
-    bio: user.bio || '', location: user.location || '', specialty: user.specialty || '' };
+    bio: user.bio || '', location: user.location || '', specialty: user.specialty || '',
+    photoUrl: user.photoUrl || '', contactEmail: user.contactEmail || '', contactPhone: user.contactPhone || '', website: user.website || '' };
 }
 async function updateProfile(userId, input) {
   const operation = profileQueue.then(async () => {
@@ -48,15 +49,35 @@ async function updateProfile(userId, input) {
       fields[name] = input[name].trim();
     }
     const current = azure.enabled ? await azure.getUser(userId) : users.find(entry => entry.id === userId);
+    for (const [name, limit] of Object.entries({ contactEmail: 160, contactPhone: 40, website: 300 })) {
+      const value = input[name] ?? current[name] ?? '';
+      if (typeof value !== 'string' || value.trim().length > limit) throw new Error('Revisa los datos de contacto.');
+      fields[name] = value.trim();
+    }
+    if (fields.contactEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fields.contactEmail)) throw new Error('Introduce un correo electrónico válido.');
+    if (fields.contactPhone && (!/^\+?[0-9 ()\-\.]{5,40}$/.test(fields.contactPhone) || fields.contactPhone.replace(/\D/g, '').length < 5)) throw new Error('Introduce un teléfono válido.');
+    if (fields.website) {
+      let website;
+      try { website = new URL(fields.website); } catch { throw new Error('Introduce una dirección web completa, con https://.'); }
+      if (!['https:', 'http:'].includes(website.protocol) || website.username || website.password) throw new Error('Usa una dirección web http o https sin credenciales.');
+      fields.website = website.href;
+    }
+    if (input.photoData !== undefined) fields.photoUrl = input.photoData === null ? '' : await gallery.saveProfilePhoto(input.photoData);
     const updated = { ...current, ...fields };
-    if (azure.enabled) await azure.saveUser(updated);
-    else {
-      const document = JSON.parse(await fs.readFile(usersFile, 'utf8'));
-      document.users = document.users.map(entry => entry.id === userId ? updated : entry);
-      await fs.writeFile(`${usersFile}.tmp`, JSON.stringify(document, null, 2));
-      await fs.rename(`${usersFile}.tmp`, usersFile);
+    try {
+      if (azure.enabled) await azure.saveUser(updated);
+      else {
+        const document = JSON.parse(await fs.readFile(usersFile, 'utf8'));
+        document.users = document.users.map(entry => entry.id === userId ? updated : entry);
+        await fs.writeFile(`${usersFile}.tmp`, JSON.stringify(document, null, 2));
+        await fs.rename(`${usersFile}.tmp`, usersFile);
+      }
+    } catch (error) {
+      if (fields.photoUrl) await gallery.deleteProfilePhoto(fields.photoUrl).catch(() => {});
+      throw error;
     }
     users = users.map(entry => entry.id === userId ? updated : entry);
+    if (input.photoData !== undefined && current.photoUrl) await gallery.deleteProfilePhoto(current.photoUrl).catch(() => {});
     return publicUser(updated);
   });
   profileQueue = operation.catch(() => {});
@@ -115,7 +136,7 @@ async function handle(request, response) {
     if (!user) return json(response, 401, { error: 'Inicia sesión para editar tu perfil.' });
     if (!request.headers['content-type']?.startsWith('application/json')) return json(response, 415, { error: 'Formato no admitido.' });
     let input;
-    try { input = await readJson(request, 8192); }
+    try { input = await readJson(request, 3 * 1024 * 1024); }
     catch { return json(response, 400, { error: 'Solicitud inválida.' }); }
     try { return json(response, 200, { user: await updateProfile(user.id, input) }); }
     catch (error) { return json(response, error.code ? 500 : 400, { error: error.code ? 'No se pudo guardar el perfil.' : error.message }); }

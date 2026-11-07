@@ -103,4 +103,28 @@ async function remove(id, user) {
   queue = operation.catch(() => {});
   return operation;
 }
-module.exports = { list, create: (input, user) => save(input, user), update: (id, input, user) => save(input, user, id), remove, image };
+async function saveProfilePhoto(data) {
+  const match = typeof data === 'string' && data.match(/^data:image\/(png|jpeg|webp);base64,([A-Za-z0-9+/]+={0,2})$/);
+  if (!match) throw new Error('Usa una foto JPG, PNG o WebP.');
+  const bytes = Buffer.from(match[2], 'base64');
+  if (!bytes.length || bytes.length > 2 * 1024 * 1024) throw new Error('La foto debe pesar como máximo 2 MB.');
+  const type = match[1];
+  const valid = type === 'png' ? bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))
+    : type === 'jpeg' ? bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255
+    : bytes.toString('ascii', 0, 4) === 'RIFF' && bytes.toString('ascii', 8, 12) === 'WEBP';
+  if (!valid) throw new Error('El contenido de la foto no coincide con su formato.');
+  const filename = `${randomUUID()}.${type}`;
+  if (azure.enabled) await azure.saveImage(filename, bytes, type);
+  else {
+    await fs.mkdir(directory, { recursive: true });
+    await fs.writeFile(path.join(directory, filename), bytes, { flag: 'wx' });
+  }
+  return `/media/${filename}`;
+}
+async function deleteProfilePhoto(url) {
+  if (!/^\/media\/[a-f0-9-]{36}\.(png|jpeg|webp)$/.test(url || '')) return;
+  const filename = path.basename(url);
+  if (azure.enabled) await azure.deleteImage(filename);
+  else await fs.unlink(path.join(directory, filename)).catch(error => { if (error.code !== 'ENOENT') throw error; });
+}
+module.exports = { list, create: (input, user) => save(input, user), update: (id, input, user) => save(input, user, id), remove, image, saveProfilePhoto, deleteProfilePhoto };

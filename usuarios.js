@@ -30,6 +30,8 @@ let fileGeneration = 0;
 let preparingImage = false;
 let savingArtwork = false;
 let savingProfile = false;
+let profilePhotoUrl = null;
+let profilePhotoRemoved = false;
 let loading = true;
 const modalOpeners = new WeakMap();
 const statusNames = { available: 'Disponible', reserved: 'Reservada', sold: 'Vendida' };
@@ -47,6 +49,10 @@ function profileFor(work) {
 }
 function avatar(profile, className = '') {
   const element = node('span', `avatar ${className}`, profile.name.trim().split(/\s+/).slice(0, 2).map(part => part[0]).join('').toUpperCase());
+  if (profile.photoUrl) {
+    const image = node('img'); image.src = profile.photoUrl; image.alt = ''; image.loading = 'lazy';
+    element.replaceChildren(image);
+  }
   const hue = [...(profile.id || profile.name)].reduce((sum, char) => sum + char.charCodeAt(0), 0) % 360;
   element.style.setProperty('--avatar-hue', hue);
   element.setAttribute('aria-hidden', 'true');
@@ -240,6 +246,14 @@ function renderProfile(profile) {
   if (profile.bio) info.append(node('p', 'profile-bio', profile.bio));
   else info.append(node('p', 'profile-bio muted', 'Un espacio para compartir su mirada a través del arte.'));
   if (profile.location) info.append(node('p', 'profile-location', profile.location));
+  const contacts = node('div', 'profile-contacts');
+  for (const [text, href] of [[profile.contactEmail, profile.contactEmail ? 'mailto:' + profile.contactEmail : ''], [profile.contactPhone, profile.contactPhone ? 'tel:' + profile.contactPhone.replace(/[^+0-9]/g, '') : ''], [profile.website, profile.website]]) {
+    if (!text) continue;
+    const link = node('a', '', text); link.href = href;
+    if (href.startsWith('http')) { link.target = '_blank'; link.rel = 'noopener noreferrer'; }
+    contacts.append(link);
+  }
+  if (contacts.childElementCount) info.append(contacts);
   const ownWorks = works.filter(work => work.userId === profile.id);
   const stats = node('div', 'profile-stats');
   const availableCount = ownWorks.filter(work => (work.saleStatus || 'available') === 'available').length;
@@ -391,19 +405,48 @@ artworkForm.addEventListener('submit', async event => {
   } catch (error) { artworkError.textContent = error.message; artworkError.hidden = false; saveArtwork.disabled = !draftImage && !editingWork; }
   finally { savingArtwork = false; artworkForm.inert = false; }
 });
+function clearProfilePhotoDraft() {
+  if (profilePhotoUrl) URL.revokeObjectURL(profilePhotoUrl);
+  profilePhotoUrl = null;
+}
+function renderProfilePhotoPreview() {
+  const photoUrl = profilePhotoUrl || (profilePhotoRemoved ? '' : currentUser?.photoUrl);
+  $('profilePhotoPreview').replaceChildren(avatar({ ...currentUser, photoUrl }, 'profile-avatar'));
+  $('removeProfilePhoto').hidden = !photoUrl;
+}
+$('profilePhoto').addEventListener('change', () => {
+  clearProfilePhotoDraft(); $('profileError').hidden = true;
+  const file = $('profilePhoto').files[0];
+  if (file && (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || !file.size || file.size > 2 * 1024 * 1024)) {
+    $('profilePhoto').value = ''; $('profileError').textContent = 'Selecciona una foto JPG, PNG o WebP de hasta 2 MB.'; $('profileError').hidden = false;
+  } else if (file) { profilePhotoUrl = URL.createObjectURL(file); profilePhotoRemoved = false; }
+  renderProfilePhotoPreview();
+});
+$('removeProfilePhoto').addEventListener('click', () => {
+  clearProfilePhotoDraft(); $('profilePhoto').value = ''; profilePhotoRemoved = true; renderProfilePhotoPreview();
+});
+profileDialog.addEventListener('close', clearProfilePhotoDraft);
 function openProfileEditor(opener) {
   if (!currentUser) return;
   const form = $('profileForm');
-  for (const name of ['name', 'bio', 'location', 'specialty']) form.elements[name].value = currentUser[name] || '';
+  for (const name of ['name', 'bio', 'location', 'specialty', 'contactEmail', 'contactPhone', 'website']) form.elements[name].value = currentUser[name] || '';
+  clearProfilePhotoDraft();
+  profilePhotoRemoved = false; $('profilePhoto').value = '';
+  renderProfilePhotoPreview();
   $('profileError').hidden = true; openModal(profileDialog, opener);
 }
 $('profileForm').addEventListener('submit', async event => {
   event.preventDefault(); if (savingProfile) return;
   const form = event.currentTarget;
-  const values = Object.fromEntries(['name', 'bio', 'location', 'specialty'].map(name => [name, form.elements[name].value.trim()]));
+  const values = Object.fromEntries(['name', 'bio', 'location', 'specialty', 'contactEmail', 'contactPhone', 'website'].map(name => [name, form.elements[name].value.trim()]));
   savingProfile = true; form.inert = true; form.querySelector('button[type="submit"]').disabled = true;
   try {
-    if (isDemo) currentUser = { ...currentUser, ...values };
+    const file = $('profilePhoto').files[0];
+    if (file) values.photoData = await new Promise((resolve, reject) => {
+      const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = () => reject(new Error('No se pudo leer la foto.')); reader.readAsDataURL(file);
+    });
+    else if (profilePhotoRemoved) values.photoData = null;
+    if (isDemo) currentUser = { ...currentUser, ...values, photoUrl: values.photoData === null ? '' : values.photoData || currentUser.photoUrl };
     else currentUser = (await nogalApi.request('/api/profile', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(values) })).user;
     profiles = profiles.map(profile => profile.id === currentUser.id ? currentUser : profile);
     updateSessionControls(); renderRoute(); profileDialog.close();

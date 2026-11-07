@@ -73,6 +73,25 @@ test('perfiles y catálogo: publicación, venta, edición, permisos y persistenc
     assert.equal(profile.name, profileInput.name);
     assert.equal(profile.bio, profileInput.bio);
     assert.equal(profile.passwordHash, undefined);
+    for (const invalid of [{ contactEmail: 'incorrecto' }, { contactPhone: 'abc' }, { website: 'javascript:alert(1)' }, { website: 'https://user:password@example.com' }, { photoData: 'data:image/png;base64,YmFk' }, { photoData: 'data:image/svg+xml;base64,PHN2Zy8+' }, { photoData: 'data:image/png;base64,' + Buffer.alloc(2 * 1024 * 1024 + 1, 1).toString('base64') }]) {
+      assert.equal((await putProfile({ ...profileInput, ...invalid })).status, 400);
+    }
+    const contact = { contactEmail: 'arte@example.com', contactPhone: '+502 5555 5555', website: 'https://example.com/arte' };
+    const withPhotoResponse = await putProfile({ ...profileInput, ...contact, photoData: imageData, id: 'elvia', photoUrl: 'https://untrusted.example/photo' });
+    assert.equal(withPhotoResponse.status, 200);
+    const withPhoto = (await withPhotoResponse.json()).user;
+    assert.match(withPhoto.photoUrl, /^\/media\/[a-f0-9-]{36}\.png$/);
+    assert.equal(withPhoto.contactEmail, contact.contactEmail);
+    assert.equal(withPhoto.contactPhone, contact.contactPhone);
+    assert.equal(withPhoto.website, contact.website);
+    assert.equal((await fetch(origin + withPhoto.photoUrl)).headers.get('content-type'), 'image/png');
+    const preserved = (await (await putProfile(profileInput)).json()).user;
+    assert.equal(preserved.photoUrl, withPhoto.photoUrl);
+    assert.equal(preserved.contactEmail, contact.contactEmail);
+    const publicProfiles = (await (await fetch(origin + '/api/profiles')).json()).profiles;
+    assert.equal(publicProfiles.find(entry => entry.id === 'astid').photoUrl, withPhoto.photoUrl);
+    assert.equal(publicProfiles.find(entry => entry.id === 'elvia').photoUrl, '');
+    assert.equal(JSON.stringify(publicProfiles).includes('photoData'), false);
     assert.equal((await (await fetch(origin + '/api/session', { headers: { Cookie: cookie } })).json()).user.name, profileInput.name);
     const profilesAfter = (await (await fetch(origin + '/api/profiles')).json()).profiles;
     assert.equal(profilesAfter.find(entry => entry.id === 'elvia').name, 'Elvia');
@@ -147,8 +166,17 @@ test('perfiles y catálogo: publicación, venta, edición, permisos y persistenc
     const persistedProfiles = (await (await fetch(origin + '/api/profiles')).json()).profiles;
     assert.equal(persistedProfiles.find(entry => entry.id === 'astid').name, profileInput.name);
     assert.equal(persistedProfiles.find(entry => entry.id === 'astid').specialty, profileInput.specialty);
+    assert.equal(persistedProfiles.find(entry => entry.id === 'astid').photoUrl, withPhoto.photoUrl);
+    assert.equal(persistedProfiles.find(entry => entry.id === 'astid').contactEmail, contact.contactEmail);
     const newLogin = await post('/api/login', { username: 'Astid', password });
     const newCookie = newLogin.headers.get('set-cookie').split(';')[0];
+    const replacementPhoto = (await (await putProfile({ ...profileInput, photoData: imageData }, newCookie)).json()).user;
+    assert.notEqual(replacementPhoto.photoUrl, withPhoto.photoUrl);
+    assert.equal((await fetch(origin + withPhoto.photoUrl)).status, 404);
+    const removedPhoto = (await (await putProfile({ ...profileInput, contactEmail: '', contactPhone: '', website: '', photoData: null }, newCookie)).json()).user;
+    assert.equal(removedPhoto.photoUrl, '');
+    assert.equal(removedPhoto.contactEmail, '');
+    assert.equal((await fetch(origin + replacementPhoto.photoUrl)).status, 404);
     assert.equal((await mutate(own.id, 'DELETE', undefined, newCookie)).status, 200);
     assert.equal((await fetch(origin + replaced.imageUrl)).status, 404);
     assert.equal((await mutate(own.id, 'DELETE', undefined, newCookie)).status, 404);

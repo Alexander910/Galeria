@@ -9,9 +9,9 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22/%3E">
   <script src="theme.js?v=mocha-beige-1"></script>
   <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="gallery.css?v=maya-frames-2">
+  <link rel="stylesheet" href="gallery.css?v=profile-contact-1">
   <script src="api.js?v=origin-49976-1" defer></script>
-  <script src="usuarios.js?v=maya-frames-2" defer></script>
+  <script src="usuarios.js?v=profile-contact-1" defer></script>
 </head>
 <body data-gallery="personal">
   <div class="gallery-scene" id="galleryScene" hidden>
@@ -80,11 +80,16 @@
     <p class="eyebrow">TU ESPACIO CREATIVO</p><h2 id="profileDialogTitle">Editar perfil</h2>
     <p class="add-description">Cuéntale a la comunidad quién está detrás de tus pinturas.</p>
     <form id="profileForm" class="artwork-form">
+      <div class="profile-photo-editor form-wide"><div id="profilePhotoPreview"></div><div><label class="field">Foto de perfil<input id="profilePhoto" type="file" accept="image/jpeg,image/png,image/webp" aria-describedby="profilePhotoHelp"></label><p class="storage-note" id="profilePhotoHelp">JPG, PNG o WebP. Máximo 2 MB.</p><button class="text-button" id="removeProfilePhoto" type="button">Quitar foto</button></div></div>
       <label class="field form-wide">Nombre público<input name="name" required maxlength="80" autocomplete="name"></label>
       <label class="field form-wide">Especialidad<input name="specialty" maxlength="80" placeholder="Ej. Pintura al óleo y paisajes"></label>
       <label class="field form-wide">Ubicación<input name="location" maxlength="80" placeholder="Ej. Ciudad de Guatemala"></label>
       <label class="field form-wide">Biografía<textarea name="bio" maxlength="500" rows="4" placeholder="Tu inspiración, tu proceso, tu historia…"></textarea></label>
-      <p class="storage-note form-wide">Estos datos serán visibles en tu perfil público.</p>
+      <fieldset class="profile-contact-fields form-wide"><legend>Contacto público (opcional)</legend><p class="storage-note">Completa solo los datos que quieras mostrar a los visitantes de tu perfil.</p>
+      <label class="field">Correo de contacto<input name="contactEmail" type="email" maxlength="160" autocomplete="email" placeholder="arte@ejemplo.com"></label>
+      <label class="field">Teléfono de contacto<input name="contactPhone" type="tel" maxlength="40" autocomplete="tel" placeholder="+502 5555 5555"></label>
+      <label class="field">Sitio web o red social<input name="website" type="url" maxlength="300" placeholder="https://..."></label></fieldset>
+      <p class="storage-note form-wide">Tu foto y estos datos serán visibles en tu perfil público.</p>
       <p class="artwork-error form-wide" id="profileError" role="alert" hidden></p>
       <button class="submit form-wide" type="submit">Guardar perfil <span aria-hidden="true">↗</span></button>
     </form>

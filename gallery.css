@@ -29,3 +29,14 @@ dialog{background:var(--surface);color:var(--ink);border:1px solid var(--line);b
 [data-frame-style=maya-sol]{--frame-color:#927761;--frame-border:18px;border-image:url('assets/maya-sol.svg') 20 / 1 / 0 round;box-shadow:0 4px 12px #211A1733}
 .frame-swatch[data-frame-style^="maya-"]{--frame-border:10px}
 @media(max-width:520px){.art-presentation[data-frame-style^="maya-"]{--frame-border:15px}}
+
+/* Foto y contacto del perfil. */
+.avatar{overflow:hidden}.avatar img{display:block;width:100%;height:100%;object-fit:cover}
+.profile-contacts{display:flex;flex-wrap:wrap;gap:10px 20px;margin-top:18px;overflow-wrap:anywhere}
+.profile-contacts a{font-size:12px;color:var(--accent);text-underline-offset:4px;max-width:100%}
+.profile-photo-editor{display:flex;align-items:center;gap:22px;padding-bottom:20px;border-bottom:1px solid var(--line)}
+.profile-photo-editor>div:last-child{flex:1;min-width:0}.profile-photo-editor input{height:auto;padding:8px 0;border:0;background:none;font-size:11px}
+.profile-photo-editor .profile-avatar{width:90px;height:90px;font-size:30px}
+.profile-contact-fields{display:grid;gap:16px;border:1px solid var(--line);border-radius:8px;padding:18px;margin:0;min-width:0}
+.profile-contact-fields legend{font-size:12px;padding:0 5px;color:var(--ink)}
+@media(max-width:520px){.profile-photo-editor{gap:14px}.profile-photo-editor .profile-avatar{width:70px;height:70px}}
