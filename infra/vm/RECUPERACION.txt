@@ -1,0 +1,129 @@
+NOGAL — GUÍA DE OPERACIÓN Y RECUPERACIÓN
+Verificación inicial: 6 de noviembre de 2026. Zona local: Guatemala (UTC-6).
+
+ACCESOS
+Principal: https://nogal-uietolmehuftu-1.northcentralus.cloudapp.azure.com
+Alternativo: https://nogal-uietolmehuftu-2.belgiumcentral.cloudapp.azure.com
+Grupo: nogal-final. Administración por Azure Portal > VM > Ejecutar comando > RunShellScript,
+o Azure CLI autenticado. El proyecto no publica SSH ni abre puertos de base de datos.
+Las credenciales de Astid, Zulema y Elvia se entregaron fuera de estos documentos.
+
+ESTADO Y DIAGNÓSTICO
+Desde el equipo con Azure CLI:
+  az vm list -g nogal-final -d -o table
+  az deployment group show -g nogal-final -n nogal-final-v3 --query properties.provisioningState
+Desde cada VM de aplicación mediante RunShellScript:
+  systemctl status nogal --no-pager
+  journalctl -u nogal -n 60 --no-pager
+  docker logs --tail 60 nogal
+No ejecutar cat /etc/nogal/app.env ni comandos de tokens al preparar evidencias.
+GET /api/health devuelve el nombre de la réplica. Es un sondeo de proceso HTTP;
+no prueba por sí solo que Vision, Blob y Tables estén disponibles.
+
+FALLA DE UNA RÉPLICA
+1. Comprobar que el otro nodo responde a través de ambos accesos públicos.
+2. Consultar el log del nodo afectado. El servicio systemd reinicia Docker automáticamente.
+3. Recuperar un nodo sin detener el otro:
+  az vm run-command invoke -g nogal-final -n nogal-app-1 --command-id RunShellScript --scripts "systemctl restart nogal; systemctl is-active nogal"
+4. Repetir GET /api/health y /api/session y comprobar app1 y app2. Esperar los dos
+   sondeos correctos de HAProxy (intervalo 3 s, rise 2). Las sesiones están en Tables.
+5. Si la VM se perdió, reutilizar infra/vm/main.bicep y server.bicep. Generar el paquete
+   con build-package.py y compilar con Bicep. Los parámetros privados permanecen en
+   data/deploy, fuera del paquete académico. Revisar what-if antes de redesplegar.
+6. En una actualización cambiar un nodo, comprobar salud y después cambiar el otro.
+   No reiniciar ambos simultáneamente durante una demostración.
+
+FALLA DEL BALANCEADOR
+1. Abrir el acceso alternativo. Este cambio de URL es manual; no hay DNS con failover.
+2. En la VM proxy afectada:
+  haproxy -c -f /etc/haproxy/haproxy.cfg
+  caddy validate --config /etc/caddy/Caddyfile
+  systemctl restart haproxy caddy
+  curl -fsS 'http://127.0.0.1:8404/stats?stats;csv'
+3. Revisar journalctl -u haproxy y journalctl -u caddy. No exportar secretos ni cookies.
+4. proxy-init.sh es la fuente de configuración. Reemplazar __PUBLIC_HOST__ por el FQDN
+   del proxy correspondiente. El segundo proxy usa Belgium Central y el primero North
+   Central US. Ambos consumen las mismas dos aplicaciones privadas.
+5. Una caída de toda la región primaria también afecta aplicaciones y base. El proxy
+   secundario por sí solo no resuelve ese escenario; no anunciar recuperación regional.
+
+BASE DE DATOS Y CONECTIVIDAD
+La cuenta nogaldbuietolmehuftu tiene publicNetworkAccess=Disabled y Shared Key=false.
+Tablas: users, sessions, artworks. Cada entidad usa PartitionKey=kind, RowKey=id y payload
+JSON. La cuenta usa LRS; no hay réplica de datos en otra región ni point-in-time restore.
+Si hay timeout, revisar antes de restaurar: endpoint privado nogal-database-private,
+zona privatelink.table.core.windows.net, vínculos a ambas VNet y emparejamiento global.
+En app u ops:
+  getent hosts nogaldbuietolmehuftu.table.core.windows.net
+El resultado debe resolver a la dirección privada del endpoint.
+Ante 403, revisar RBAC y la identidad asignada, sin habilitar claves compartidas ni
+acceso público. Los roles pueden tardar unos minutos en propagarse.
+
+RESPALDO
+Servidor nogal-ops, timer nogal-backup.timer, todos los días a las 06:30 UTC
+(00:30 Guatemala). Ejecución manual mediante RunShellScript:
+  /usr/local/bin/nogal-backup
+  systemctl list-timers nogal-backup.timer --no-pager
+El contenedor privado backups de nogaluietolmehuftu recibe un tar.gz con tables.json
+(users y artworks) y las imágenes. Las sesiones se excluyen. El archivo contiene hashes
+de acceso: mantener privado y restringido al administrador. No adjuntarlo al informe.
+Respaldo comprobado: 2026-11-06T22-50-46-796Z.tar.gz; 3 usuarios, 7 obras y 7 imágenes.
+Se descargó y validó sin escritura; no se hizo una restauración destructiva en producción.
+Se conserva además el ZIP local anterior en data/backups/20261106-035849.zip.
+Las imágenes tienen soft delete de 7 días; esto no sustituye el respaldo de Tables.
+La tarea conserva los archivos de respaldo en Azure; definir retención al pasar a producción.
+
+RECUPERAR REGISTROS O IMÁGENES
+1. Elegir un respaldo y guardar otro del estado actual. Si cambia la base, poner ambas
+   aplicaciones en mantenimiento (systemctl stop nogal) para evitar escrituras concurrentes.
+2. La identidad de ops puede leer respaldo y fuentes pero NO escribir en users/artworks.
+   La restauración debe ejecutarla una identidad autorizada de aplicación, en su VNet.
+3. Desde Azure CLI, conceder temporalmente a nogal-app-identity el rol Storage Blob Data
+   Reader SOLO en el contenedor backups. Obtener principalId de az identity show y el
+   scope de az storage account show (id + /blobServices/default/containers/backups).
+   Registrar el ID de la asignación para retirarla al terminar. No otorgar Owner a la VM.
+4. Usar prepare-restore-check.py para preparar el script de descarga y verificación.
+   Cambiar el nombre del respaldo por el elegido. Ejecutar el script mediante RunCommand
+   en nogal-app-1; crea un directorio local privado y extrae el tar.gz dentro de un
+   contenedor sin privilegios. El último comando es una simulación:
+  docker run --rm -v /var/lib/nogal-backup/recovery-check:/restore:ro -v /opt/nogal/restore.cjs:/app/restore.cjs:ro nogal:project node restore.cjs /restore
+5. Revisar conteos y tamaños. Para aplicar, usar el mismo montaje, añadir
+   --env-file /etc/nogal/app.env después de --rm, y --apply después de /restore.
+   restore.cjs sube archivos y repone entidades por ID; NO borra obras nuevas que no
+   estén en el respaldo. Invalida todas las sesiones. Una recuperación total requiere
+   resolver explícitamente los registros sobrantes, no borrarlos por suposición.
+6. Reiniciar app1 y app2, verificar login, historial, archivos y etiquetas. Retirar la
+   asignación temporal de lectura de backups. Limpiar los archivos temporales privados.
+7. Objetivo de pérdida de datos: hasta 24 horas con timer diario si los respaldos pasan.
+   No se midió RTO completo; no prometer un tiempo de restauración no probado.
+
+APROVISIONAMIENTO
+build-package.py genera data/deploy/nogal-source.tar.gz y app-init.sh. main.bicep consume
+ese script, usa identidades administradas, Key Vault y parámetros seguros. Compilar:
+  bicep build infra/vm/main.bicep --outfile data/deploy/nogal-five-servers.json
+Desplegar usando el archivo privado local de parámetros. Una instalación en otra cuenta
+requiere tres hashes scrypt/salt, una clave SSH pública, cuotas y regiones permitidas.
+No distribuir data/deploy/nogal-five-servers.parameters.json, nogal-admin, users.json,
+tokens de .tools, archivos .env ni archivos de respaldo. El JSON ARM del paquete no
+contiene valores de contraseña; solicita bootstrapUsers como secureString.
+
+COSTOS Y CIERRE
+Límite autorizado: USD 50 contando crédito de estudiante. Presupuesto nogal-50-usd
+configurado para seguimiento; NO corta el consumo automáticamente. Cinco VMs tienen
+costo de cómputo aproximado de USD 0.0498/h antes de red, discos y servicios.
+La estimación de trabajo hasta la exposición es USD 25–35 para unos seis días y uso
+pequeño. No equivale a una factura ni autoriza operación indefinida. Revisar Cost
+Management antes y después de la exposición del 11/11/2026 a las 19:00 Guatemala.
+NAT, IPs, endpoint privado, discos y almacenamiento siguen cobrando con las VMs apagadas.
+Para cerrar: crear respaldo, descargarlo de forma privada y comprobar recuperación;
+el responsable debe autorizar retirar nogal-final. No ejecutar eliminación del grupo
+sin esa instrucción porque también elimina sus imágenes, tablas y respaldos de Azure.
+
+DEMOSTRACIÓN Y PARTICIPACIÓN
+Propuesta para que el equipo confirme; no es registro de aportes ya realizados:
+Aldo Alexander: redes, HAProxy y prueba de continuidad.
+Carmen Zulema: interfaz, perfiles y publicación/edición de obras.
+Astrid Cuxilic: Blob, Vision y etiquetas con confianza.
+Elvia Veronica: tablas privadas, identidades y recuperación de respaldos.
+Cada persona debe practicar y poder explicar toda la arquitectura. Las cuentas de la
+aplicación siguen siendo Astid, Zulema y Elvia; no se creó una cuarta cuenta.

@@ -3,6 +3,13 @@ const fs = require('node:fs/promises');
 const path = require('node:path');
 const { randomBytes, scryptSync, timingSafeEqual } = require('node:crypto');
 
+const gallery = require('./gallery-store');
+const azure = require('./azure-store');
+const production = process.env.NODE_ENV === 'production';
+const publicOrigin = process.env.PUBLIC_ORIGIN;
+const publicOrigins = [publicOrigin, ...(process.env.EXTRA_PUBLIC_ORIGINS || '').split(',')].filter(Boolean);
+if (production && !publicOrigin) throw new Error('Configura PUBLIC_ORIGIN con la URL HTTPS de la aplicación.');
+const cookieSecurity = production ? '; Secure' : '';
 const root = __dirname;
 const port = Number(process.env.PORT || 4173);
 const usersFile = path.join(root, 'data', 'users.json');
@@ -10,17 +17,17 @@ const sessions = new Map();
 const attempts = new Map();
 const sessionSeconds = 60 * 60 * 8;
 let users;
+let profileQueue = Promise.resolve();
 
 async function initializeUsers() {
+  if (azure.enabled) { users = await azure.initialize(); return; }
   await fs.mkdir(path.dirname(usersFile), { recursive: true });
   try {
     users = JSON.parse(await fs.readFile(usersFile, 'utf8')).users;
     if (!Array.isArray(users)) throw new Error('Formato de usuarios inválido.');
   } catch (error) {
     if (error.code !== 'ENOENT') throw error;
-    const salt = randomBytes(16).toString('hex');
-    users = [{ id: 'user-aldo-test', name: 'Aldo', email: 'aldo@nogal.local', passwordSalt: salt, passwordHash: scryptSync('Nogal2026!', salt, 64).toString('hex'), createdAt: new Date().toISOString() }];
-    await fs.writeFile(usersFile, JSON.stringify({ users }, null, 2), { flag: 'wx' });
+    throw new Error('No hay usuarios configurados. Proporciona data/users.json con las cuentas autorizadas.');
   }
 }
 
@@ -28,19 +35,45 @@ function json(response, status, body, headers = {}) {
   response.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', ...headers });
   response.end(JSON.stringify(body));
 }
-function publicUser(user) { return { id: user.id, name: user.name, email: user.email }; }
-function sessionUser(request) {
-  const token = (request.headers.cookie || '').split(';').map(part => part.trim()).find(part => part.startsWith('nogal_session='))?.slice('nogal_session='.length);
-  const session = sessions.get(token);
-  if (!session || session.expiresAt <= Date.now()) { if (token) sessions.delete(token); return null; }
-  return users.find(user => user.id === session.userId) || null;
+function publicUser(user) {
+  return { id: user.id, name: user.name, username: user.username,
+    bio: user.bio || '', location: user.location || '', specialty: user.specialty || '' };
 }
-async function readJson(request) {
+async function updateProfile(userId, input) {
+  const operation = profileQueue.then(async () => {
+    if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('Revisa los datos del perfil.');
+    const fields = {};
+    for (const [name, limit] of Object.entries({ name: 80, bio: 500, location: 80, specialty: 80 })) {
+      if (typeof input[name] !== 'string' || input[name].trim().length > limit || (name === 'name' && !input[name].trim())) throw new Error('Revisa los datos del perfil.');
+      fields[name] = input[name].trim();
+    }
+    const current = azure.enabled ? await azure.getUser(userId) : users.find(entry => entry.id === userId);
+    const updated = { ...current, ...fields };
+    if (azure.enabled) await azure.saveUser(updated);
+    else {
+      const document = JSON.parse(await fs.readFile(usersFile, 'utf8'));
+      document.users = document.users.map(entry => entry.id === userId ? updated : entry);
+      await fs.writeFile(`${usersFile}.tmp`, JSON.stringify(document, null, 2));
+      await fs.rename(`${usersFile}.tmp`, usersFile);
+    }
+    users = users.map(entry => entry.id === userId ? updated : entry);
+    return publicUser(updated);
+  });
+  profileQueue = operation.catch(() => {});
+  return operation;
+}
+async function sessionUser(request) {
+  const token = (request.headers.cookie || '').split(';').map(part => part.trim()).find(part => part.startsWith('nogal_session='))?.slice('nogal_session='.length);
+  const session = azure.enabled ? await azure.getSession(token) : sessions.get(token);
+  if (!session || session.expiresAt <= Date.now()) { if (token) { if (azure.enabled) await azure.deleteSession(token); else sessions.delete(token); } return null; }
+  return azure.enabled ? azure.getUser(session.userId) : users.find(user => user.id === session.userId) || null;
+}
+async function readJson(request, limit = 4096) {
   let length = 0;
   const chunks = [];
   for await (const chunk of request) {
     length += chunk.length;
-    if (length > 4096) throw new Error('Solicitud demasiado grande.');
+    if (length > limit) throw new Error('Solicitud demasiado grande.');
     chunks.push(chunk);
   }
   return JSON.parse(Buffer.concat(chunks).toString('utf8'));
@@ -49,18 +82,16 @@ async function readJson(request) {
 async function handle(request, response) {
   const host = request.headers.host;
   const localHosts = ['127.0.0.1', 'localhost'].flatMap(name => [port, 5500, 5501].map(value => `${name}:${value}`));
-  if (!localHosts.includes(host)) return json(response, 403, { error: 'Host no permitido.' });
+  if (!localHosts.includes(host) && !publicOrigins.some(origin => host === new URL(origin).host)) return json(response, 403, { error: 'Host no permitido.' });
   const url = new URL(request.url, `http://${host}`);
-  if (['/', '/index.html'].includes(url.pathname) && ['GET', 'HEAD'].includes(request.method)) {
-    response.writeHead(302, { Location: '/login.html', 'Cache-Control': 'no-store' });
-    return response.end();
-  }
-  if (url.pathname === '/usuarios.html' && url.searchParams.get('demo') !== '1' && !sessionUser(request)) {
+  if (url.pathname === '/') url.pathname = '/index.html';
+  if (url.pathname === '/usuarios.html' && url.searchParams.get('demo') !== '1' && !(await sessionUser(request))) {
     response.writeHead(302, { Location: '/login.html', 'Cache-Control': 'no-store' });
     return response.end();
   }
   const hostname = host.split(':')[0];
   const allowedOrigins = [4173, 5500, 5501, 49976, port].map(value => `http://${hostname}:${value}`);
+  allowedOrigins.push(...publicOrigins);
   const trustedOrigin = request.headers.origin && allowedOrigins.includes(request.headers.origin);
   if (url.pathname.startsWith('/api/') && trustedOrigin) {
     response.setHeader('Access-Control-Allow-Origin', request.headers.origin);
@@ -69,21 +100,78 @@ async function handle(request, response) {
   }
   if (url.pathname.startsWith('/api/') && request.method === 'OPTIONS') {
     if (!trustedOrigin) return json(response, 403, { error: 'Origen no permitido.' });
-    response.writeHead(204, { 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type', 'Cache-Control': 'no-store' });
+    response.writeHead(204, { 'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type', 'Cache-Control': 'no-store' });
     return response.end();
   }
+  if (url.pathname === '/api/artworks' && request.method === 'GET') {
+    return json(response, 200, { works: await gallery.list() });
+  }
+  if (url.pathname === '/api/profiles' && request.method === 'GET') {
+    return json(response, 200, { profiles: (azure.enabled ? await azure.listUsers() : users).map(publicUser) });
+  }
+  if (url.pathname === '/api/profile' && request.method === 'PUT') {
+    if (!trustedOrigin) return json(response, 403, { error: 'Origen no permitido.' });
+    const user = await sessionUser(request);
+    if (!user) return json(response, 401, { error: 'Inicia sesión para editar tu perfil.' });
+    if (!request.headers['content-type']?.startsWith('application/json')) return json(response, 415, { error: 'Formato no admitido.' });
+    let input;
+    try { input = await readJson(request, 8192); }
+    catch { return json(response, 400, { error: 'Solicitud inválida.' }); }
+    try { return json(response, 200, { user: await updateProfile(user.id, input) }); }
+    catch (error) { return json(response, error.code ? 500 : 400, { error: error.code ? 'No se pudo guardar el perfil.' : error.message }); }
+  }
+  if (url.pathname === '/api/artworks' && request.method === 'POST') {
+    if (!trustedOrigin) return json(response, 403, { error: 'Origen no permitido.' });
+    const user = await sessionUser(request);
+    if (!user) return json(response, 401, { error: 'Inicia sesión para publicar una imagen.' });
+    if (!request.headers['content-type']?.startsWith('application/json')) return json(response, 415, { error: 'Formato no admitido.' });
+    let input;
+    try { input = await readJson(request, 35 * 1024 * 1024); }
+    catch { return json(response, 400, { error: 'Solicitud inválida o imagen demasiado grande.' }); }
+    try { return json(response, 201, { work: await gallery.create(input || {}, user) }); }
+    catch (error) { return json(response, 400, { error: error.code ? 'No se pudo guardar la imagen. Inténtalo de nuevo.' : error.message }); }
+  }
+  const artworkRoute = url.pathname.match(/^\/api\/artworks\/([a-f0-9-]{36})$/);
+  if (artworkRoute && ['PUT', 'DELETE'].includes(request.method)) {
+    if (!trustedOrigin) return json(response, 403, { error: 'Origen no permitido.' });
+    const user = await sessionUser(request);
+    if (!user) return json(response, 401, { error: 'Inicia sesión para modificar una imagen.' });
+    let input;
+    if (request.method === 'PUT') {
+      if (!request.headers['content-type']?.startsWith('application/json')) return json(response, 415, { error: 'Formato no admitido.' });
+      try { input = await readJson(request, 35 * 1024 * 1024); }
+      catch { return json(response, 400, { error: 'Solicitud inválida o imagen demasiado grande.' }); }
+    }
+    try {
+      if (request.method === 'DELETE') {
+        await gallery.remove(artworkRoute[1], user);
+        return json(response, 200, { ok: true });
+      }
+      return json(response, 200, { work: await gallery.update(artworkRoute[1], input, user) });
+    } catch (error) {
+      return json(response, error.status || (error.code ? 500 : 400), { error: error.code ? 'No se pudo guardar el cambio. Inténtalo de nuevo.' : error.message });
+    }
+  }
+  if (url.pathname.startsWith('/media/') && ['GET', 'HEAD'].includes(request.method)) {
+    const filename = url.pathname.slice('/media/'.length);
+    const data = await gallery.image(filename);
+    if (!data) return json(response, 404, { error: 'Imagen no disponible.' });
+    const types = { '.png': 'image/png', '.jpeg': 'image/jpeg', '.webp': 'image/webp' };
+    response.writeHead(200, { 'Content-Type': types[path.extname(filename)], 'X-Content-Type-Options': 'nosniff', 'Cache-Control': 'public, max-age=86400' });
+    return response.end(request.method === 'HEAD' ? undefined : data);
+  }
   if (url.pathname === '/api/session' && request.method === 'GET') {
-    const user = sessionUser(request);
+    const user = await sessionUser(request);
     return json(response, 200, { user: user ? publicUser(user) : null });
   }
   if (url.pathname === '/api/health' && request.method === 'GET') {
-    return json(response, 200, { service: 'nogal-api' });
+    return json(response, 200, { service: 'nogal-api', instance: process.env.NOGAL_INSTANCE || 'local' });
   }
   if (url.pathname === '/api/logout' && request.method === 'POST') {
     if (!trustedOrigin) return json(response, 403, { error: 'Origen no permitido.' });
     const token = (request.headers.cookie || '').split(';').map(part => part.trim()).find(part => part.startsWith('nogal_session='))?.slice('nogal_session='.length);
-    if (token) sessions.delete(token);
-    return json(response, 200, { ok: true }, { 'Set-Cookie': 'nogal_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0' });
+    if (token) { if (azure.enabled) await azure.deleteSession(token); else sessions.delete(token); }
+    return json(response, 200, { ok: true }, { 'Set-Cookie': `nogal_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0${cookieSecurity}` });
   }
   if (url.pathname === '/api/login' && request.method === 'POST') {
     if (!trustedOrigin) return json(response, 403, { error: 'Origen no permitido.' });
@@ -95,17 +183,19 @@ async function handle(request, response) {
     if (++rate.count > 12) return json(response, 429, { error: 'Demasiados intentos. Espera un minuto.' });
     let input;
     try { input = await readJson(request); } catch { return json(response, 400, { error: 'Solicitud inválida.' }); }
-    if (!input || typeof input.email !== 'string' || typeof input.password !== 'string' || input.password.length > 256) return json(response, 400, { error: 'Revisa el correo y la contraseña.' });
-    const user = users.find(entry => entry.email === input.email.trim().toLowerCase());
+    if (!input || typeof input.username !== 'string' || typeof input.password !== 'string' || input.password.length > 256) return json(response, 400, { error: 'Revisa el usuario y la contraseña.' });
+    const accounts = azure.enabled ? await azure.listUsers() : users;
+    const user = accounts.find(entry => entry.username.toLowerCase() === input.username.trim().toLowerCase());
     const derived = scryptSync(input.password, user?.passwordSalt || 'unknown-user-salt', 64);
     const expected = user ? Buffer.from(user.passwordHash, 'hex') : Buffer.alloc(64);
-    if (!user || expected.length !== derived.length || !timingSafeEqual(derived, expected)) return json(response, 401, { error: 'El correo o la contraseña no son correctos.' });
+    if (!user || expected.length !== derived.length || !timingSafeEqual(derived, expected)) return json(response, 401, { error: 'El usuario o la contraseña no son correctos.' });
     const previousToken = (request.headers.cookie || '').split(';').map(part => part.trim()).find(part => part.startsWith('nogal_session='))?.slice('nogal_session='.length);
-    if (previousToken) sessions.delete(previousToken);
+    if (previousToken) { if (azure.enabled) await azure.deleteSession(previousToken); else sessions.delete(previousToken); }
     const token = randomBytes(32).toString('hex');
-    sessions.set(token, { userId: user.id, expiresAt: Date.now() + sessionSeconds * 1000 });
+    const session = { userId: user.id, expiresAt: Date.now() + sessionSeconds * 1000 };
+    if (azure.enabled) await azure.setSession(token, session); else sessions.set(token, session);
     attempts.delete(address);
-    return json(response, 200, { user: publicUser(user) }, { 'Set-Cookie': `nogal_session=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${sessionSeconds}` });
+    return json(response, 200, { user: publicUser(user) }, { 'Set-Cookie': `nogal_session=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${sessionSeconds}${cookieSecurity}` });
   }
   if (url.pathname.startsWith('/api/')) return json(response, 404, { error: 'Ruta no disponible.' });
   if (!['GET', 'HEAD'].includes(request.method)) return json(response, 405, { error: 'Método no permitido.' });
@@ -113,7 +203,7 @@ async function handle(request, response) {
   try { pathname = decodeURIComponent(url.pathname); } catch { return json(response, 400, { error: 'Ruta inválida.' }); }
   const file = path.resolve(root, '.' + (pathname === '/' ? '/index.html' : pathname));
   const relative = path.relative(root, file).replaceAll('\\', '/');
-  if (relative.startsWith('../') || path.isAbsolute(relative) || !(['index.html', 'login.html', 'usuarios.html', 'style.css', 'gallery.css', 'api.js', 'login.js', 'usuarios.js'].includes(relative) || relative.startsWith('assets/'))) return json(response, 404, { error: 'Archivo no disponible.' });
+  if (relative.startsWith('../') || path.isAbsolute(relative) || !(['index.html', 'login.html', 'usuarios.html', 'style.css', 'gallery.css', 'api.js', 'login.js', 'usuarios.js', 'theme.js'].includes(relative) || relative.startsWith('assets/'))) return json(response, 404, { error: 'Archivo no disponible.' });
   try {
     const data = await fs.readFile(file);
     const types = { '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': 'text/javascript', '.svg': 'image/svg+xml', '.woff2': 'font/woff2' };
@@ -132,5 +222,5 @@ if (require.main === module) ready.then(() => {
   }, 60000);
   cleanup.unref();
   http.createServer((request, response) => handle(request, response).catch(() => json(response, 500, { error: 'No se pudo completar la solicitud.' })))
-    .listen(port, '127.0.0.1', () => console.log(`Nogal: http://127.0.0.1:${port}`));
+    .listen(port, process.env.HOST || '127.0.0.1', () => console.log(`Nogal: http://127.0.0.1:${port}`));
 }).catch(error => { console.error('No se pudo iniciar Nogal:', error.message); process.exitCode = 1; });

@@ -13,11 +13,11 @@ module.exports = {
     (request, response, next) => {
       const pathname = request.url.split('?')[0];
       // Los datos y el código del servidor no se sirven como archivos estáticos.
-      if (/^\/(?:data(?:\/|$)|server\.js$|fiveserver\.config\.js$|PRUEBAS\.txt$|\.git)/i.test(pathname)) {
+      if (/^\/(?:data(?:\/|$)|node_modules(?:\/|$)|infra(?:\/|$)|\.tools(?:\/|$)|\.env|server\.js$|gallery-store\.js$|azure-store\.js$|fiveserver\.config\.js$|PRUEBAS\.txt$|\.git)/i.test(pathname)) {
         response.writeHead(404);
         return response.end();
       }
-      if (!pathname.startsWith('/api/') && !['/', '/index.html', '/login.html', '/usuarios.html'].includes(pathname)) return next();
+      if (!pathname.startsWith('/api/') && !pathname.startsWith('/media/') && !['/', '/index.html', '/login.html', '/usuarios.html'].includes(pathname)) return next();
       ready.then(() => handle(request, response)).catch(error => {
         console.error('Nogal: fallo de la API integrada:', error.message);
         if (!response.headersSent) response.writeHead(500, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });

@@ -1,2 +1,10 @@
 data/
 README.md
+
+.tools/
+node_modules/
+.env
+.env.*
+!env.example
+output/
+tmp/

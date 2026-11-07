@@ -1,0 +1,69 @@
+ESTADO ACTUAL: RECURSOS FACTURABLES ELIMINADOS POR INSTRUCCIÓN DEL RESPONSABLE
+El grupo nogal-final ya no existe. No quedan VMs, discos, almacenamiento, base,
+Vision, Key Vault, IPs, NAT ni redes del proyecto. La web está fuera de línea.
+Solo quedan las dos instancias automáticas de Network Watcher sin flow logs,
+Connection Monitor ni capturas activos; no generan cobro por su mera habilitación.
+La revisión automática impidió borrar NetworkWatcherRG por posible uso compartido;
+se completó el cierre sin eliminar ese grupo.
+Respaldo local actual verificado: data/backups/20261107-034140.zip,
+con cinco imágenes actuales, catálogo y tres usuarios con perfiles y hashes.
+Consumo mostrado en el portal al cerrar: USD 0.03. Es provisional y puede aumentar
+al registrarse consumo anterior pendiente. No se comprobó el saldo de crédito restante.
+La infraestructura y pruebas descritas a continuación son historial anterior al cierre.
+Cierre verificado (Guatemala): 2026-11-06 21:49:20 -06:00
+
+NOGAL — ESTADO ACTUAL EN AZURE
+Verificado el 6 de noviembre de 2026.
+
+Principal: https://nogal-uietolmehuftu-1.northcentralus.cloudapp.azure.com
+Alternativo: https://nogal-uietolmehuftu-2.belgiumcentral.cloudapp.azure.com
+Grupo: nogal-final. Despliegue: nogal-final-v3, Succeeded.
+
+CINCO SERVIDORES EN EJECUCIÓN
+nogal-proxy-1: North Central US, Caddy HTTPS y HAProxy.
+nogal-proxy-2: Belgium Central, Caddy HTTPS y HAProxy alternativo.
+nogal-app-1 y nogal-app-2: North Central US, Docker bajo systemd, datos compartidos.
+nogal-ops: Belgium Central, respaldos privados diarios a las 06:30 UTC.
+Tamaño: Standard_B2ats_v2. Aplicaciones dentro de un conjunto de disponibilidad.
+Administración por Azure Run Command, sin SSH público.
+
+DATOS
+Tables: nogaldbuietolmehuftu; users, sessions, artworks; endpoint privado,
+acceso público deshabilitado y claves compartidas deshabilitadas.
+Blob: nogaluietolmehuftu; contenedores privados images y backups.
+Análisis: nogal-vision-uietolmehuftu, Azure AI Vision S1, identidad administrada.
+Key Vault: nogal-kv-uietolmehuftu; configuración inicial de usuarios por RBAC.
+Usuarios: Astid, Zulema y Elvia. Contraseñas entregadas por separado y hashes scrypt.
+Siete imágenes recuperadas con propietarios y contenido conservados.
+La importación por API asignó nuevos IDs y fechas y repitió el análisis de etiquetas.
+
+PRUEBAS
+Tres accesos correctos; sesiones atendidas por app1 y app2; edición 200, edición ajena
+403, eliminación temporal 200 y rechazo de archivo inválido 400.
+Continuidad: 164 solicitudes autenticadas, sin fallos, con app1 detenida 25 segundos.
+Ambas réplicas recuperadas. Backup 2026-11-06T22-50-46-796Z.tar.gz: tres usuarios,
+siete obras y siete imágenes. Descargado y validado en dry-run sin restaurar producción.
+El sondeo /api/health comprueba el proceso HTTP, no todos sus servicios dependientes.
+
+ARCHIVOS VIGENTES
+infra/vm/main.bicep y server.bicep: infraestructura de cinco servidores.
+infra/vm/proxy-init.sh: HAProxy y Caddy.
+infra/vm/build-package.py: fuente permitida e instalador.
+infra/vm/backup.cjs y restore.cjs: respaldo y recuperación.
+infra/vm/RECUPERACION.txt: comandos, seguridad, recuperación y cierre.
+data/deploy: plantillas compiladas, parámetros PRIVADOS y evidencias.
+output: informe, guía, presentación y entrega depurada.
+infra/main.bicep e infra/app.bicep son la arquitectura anterior de Container Apps;
+no utilizarlas para reproducir el despliegue actual de cinco servidores.
+El docente autorizó usar servicios equivalentes de Azure, según el registro previo.
+
+LÍMITES Y COSTOS
+El acceso al proxy alternativo requiere cambiar la URL manualmente. Las aplicaciones
+y la base siguen en la región primaria. No se comprobó recuperación regional ni una
+restauración completa sobre producción. El respaldo no incluye sesiones.
+Límite autorizado: USD 50 incluyendo crédito. Estimación de uso pequeño durante unos
+seis días: USD 25–35, pendiente de cargos reales en Cost Management.
+El presupuesto nogal-50-usd NO detiene cobros. Detener VMs no elimina cargos de NAT,
+IPs, discos, endpoint privado o datos. Después de la exposición del 11 de noviembre
+hay que respaldar y autorizar el retiro de recursos para evitar consumo indefinido.
+No se han eliminado los datos ni programado su eliminación.

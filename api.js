@@ -31,7 +31,7 @@
       return result;
     },
     async goToGallery() {
-      location.assign(new URL('/usuarios.html', await this.origin()).href);
+      location.assign(new URL('/index.html', await this.origin()).href);
     },
   };
 })();

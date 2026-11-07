@@ -93,7 +93,7 @@ document.getElementById('loginForm').addEventListener('submit', async (event) =>
   message.hidden = true;
   button.disabled = true;
   try {
-    const result = await nogalApi.request('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: document.getElementById('email').value, password: password.value }) });
+    const result = await nogalApi.request('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: document.getElementById('username').value, password: password.value }) });
     if (!result.user?.name) throw new Error('La respuesta del servidor no es válida.');
     password.value = '';
     await nogalApi.goToGallery();
@@ -107,7 +107,7 @@ setLamp(false);
 
 
 document.getElementById('exploreGallery').addEventListener('click', () => {
-  location.assign('usuarios.html?demo=1');
+  location.assign('index.html');
 });
 nogalApi.request('/api/session')
   .then(result => { if (result?.user?.name) return nogalApi.goToGallery(); })

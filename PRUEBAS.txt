@@ -1,3 +1,20 @@
+ESTADO DE AZURE — 6 DE NOVIEMBRE DE 2026
+La instalación vigente tiene cinco VMs, dos réplicas tras HAProxy, Blob y Tables
+privado. Ver DEPLOYMENT.txt e infra/vm/RECUPERACION.txt para las instrucciones actuales.
+Evidencias: data/deploy/cloud-verification.json y continuity.json.
+Las instrucciones siguientes conservan el historial de uso local y de versiones
+anteriores; las afirmaciones de que no existe base administrada no aplican a Azure.
+ACTUALIZACIÓN: GALERÍA COMPARTIDA
+-------------------------------
+- index.html es la portada pública y muestra las publicaciones de todos los usuarios.
+- Iniciar sesión permite publicar desde el índice o desde usuarios.html.
+- Las imágenes JPG, PNG y WebP (máximo 19 MB) se guardan en data/gallery/.
+- El catálogo y los archivos sobreviven a una recarga y al reinicio del servidor.
+- usuarios.html?demo=1 sigue siendo una muestra temporal; no publica imágenes.
+- Después de actualizar, reiniciar Node o Five Server para cargar las nuevas rutas.
+- Este almacenamiento es local; todavía no usa S3 ni una base de datos administrada.
+- Las menciones a colección temporal más abajo se aplican al modo demo.
+
 NOGAL - GUÍA DE PRUEBAS PARA COLABORADORES
 ========================================
 
@@ -66,16 +83,11 @@ Después de modificar server.js, detenerlo y ejecutar node server.js otra vez.
 Después de modificar HTML, CSS o JavaScript del navegador, recargar la página.
 Si se ve una versión anterior, usar Ctrl + F5 (o la recarga sin caché del navegador).
 
-5. USUARIO LOCAL DE PRUEBA
---------------------------
-Nombre:     Aldo
-Correo:     aldo@nogal.local
-Contraseña: Nogal2026!
-
-La cuenta se crea automáticamente en el primer arranque de cada colaborador.
-Es una cuenta de demostración local, no una cuenta de Outlook u otro proveedor.
-Escribir el correo y la contraseña indicados; no usar las credenciales personales
-que el navegador pueda haber autocompletado.
+5. USUARIOS AUTORIZADOS
+------------------------
+Solo existen Astid, Zulema y Elvia. Usa la contraseña entregada a cada persona.
+No se crean cuentas de prueba automáticamente. Los hashes locales están en
+data/users.json, excluido de Git. En Azure se almacenan en Azure Table Storage con acceso privado.
 
 6. PRUEBAS MANUALES Y RESULTADOS ESPERADOS
 -----------------------------------------
@@ -87,19 +99,19 @@ A. Lámpara y login
    5) Probar el botón para mostrar y ocultar la contraseña.
 
 B. Credenciales incorrectas
-   1) Introducir el correo de prueba y una contraseña incorrecta de 6 o más caracteres.
+   1) Introducir un usuario autorizado y una contraseña incorrecta de 6 o más caracteres.
    2) El acceso debe rechazarse y permanecer en el login.
    3) Evitar muchos intentos seguidos: existe un límite de intentos por minuto.
 
 C. Inicio de sesión correcto
-   1) Usar aldo@nogal.local y Nogal2026!.
+   1) Usar un usuario autorizado y su contraseña.
    2) Se debe navegar a usuarios.html.
-   3) El marco de madera superior debe mostrar Aldo.
+   3) Debe mostrarse la galería de la comunidad.
    4) Se deben ver las obras de muestra y el botón Añadir obra.
    5) Recargar: la sesión debe seguir activa y conservar el nombre.
 
 D. Adjuntar imágenes y probar cuadros
-   1) Pulsar Añadir obra y adjuntar una imagen local (máximo 25 MB).
+   1) Pulsar Añadir obra y adjuntar una imagen local (máximo 19 MB).
    2) La imagen debe aparecer en la vista previa del marco.
    3) Elegir distintos tamaños predefinidos.
    4) Cambiar entre vertical y horizontal; comprobar la proporción y las medidas.
@@ -131,7 +143,7 @@ F. Cerrar sesión y acceso directo
 G. Muestra sin autenticación
    Desde el login, Explorar galería de muestra abre usuarios.html?demo=1.
    En esa vista el letrero muestra Nogal y no prueba el acceso de un usuario.
-   Para verificar el nombre Aldo, usar el formulario de inicio de sesión.
+   Para publicar una imagen, usar el formulario de inicio de sesión.
 
 H. Pantallas pequeñas
    Probar una ventana estrecha o un móvil emulado en el navegador.

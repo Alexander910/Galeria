@@ -1,64 +1,93 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#eeeadf">
-  <meta name="description" content="Nogal. Una pared propia para las obras que hablan de ti.">
-  <title>Nogal — Tu galería</title>
+  <meta name="theme-color" content="#F1E8DC">
+  <meta name="description" content="Descubre pinturas originales, conoce a sus artistas y encuentra una obra para tu espacio en Nogal.">
+  <title>Nogal — Arte con un lugar</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22/%3E">
+  <script src="theme.js?v=mocha-beige-1"></script>
   <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="gallery.css">
+  <link rel="stylesheet" href="gallery.css?v=maya-frames-2">
   <script src="api.js?v=origin-49976-1" defer></script>
-  <script src="usuarios.js?v=logout-1" defer></script>
+  <script src="usuarios.js?v=maya-frames-2" defer></script>
 </head>
-<body>
+<body data-gallery="personal">
   <div class="gallery-scene" id="galleryScene" hidden>
+    <header class="site-header">
+      <a class="site-brand" href="#explore" aria-label="Nogal, inicio"><span class="brand-mark" aria-hidden="true">n.</span> nogal<span class="brand-tag">ARTE ORIGINAL</span></a>
+      <nav class="main-nav" aria-label="Navegación principal"><a href="#explore" id="exploreLink">Explorar</a><a href="#artists" id="artistsLink">Artistas</a></nav>
+      <div class="session-actions">
+        <button class="theme-toggle" id="themeToggle" type="button" aria-label="Activar modo oscuro" title="Cambiar tema">☾</button>
+        <button class="add-button primary-button" id="addArtwork" type="button">＋ Publicar obra</button>
+        <a class="my-profile" id="myProfileLink" href="usuarios.html" aria-label="Mi perfil" hidden></a>
+        <a class="logout-button" id="loginLink" href="login.html">Entrar</a>
+        <button class="logout-button" id="logoutButton" type="button" hidden>Salir</button>
+      </div>
+    </header>
     <main class="gallery-main" id="galeria">
-      <div class="session-actions"><button class="logout-button" id="logoutButton" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M10 4H4v16h6m4-12 4 4-4 4m-6-4h12"/></svg><span>Cerrar sesión</span></button></div>
       <p class="logout-error" id="logoutError" role="alert" hidden></p>
-      <header class="gallery-nameplate">
-        <div class="nameplate-frame frame">
-          <i class="rail top" aria-hidden="true"></i><i class="rail right" aria-hidden="true"></i><i class="rail bottom" aria-hidden="true"></i><i class="rail left" aria-hidden="true"></i>
-          <h1 tabindex="-1" id="galleryTitle">Nogal</h1>
-        </div>
-      </header>
-      <section class="collection-toolbar" aria-label="Herramientas de la colección">
-
-        <div class="toolbar-tools"><label class="gallery-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="10" cy="10" r="6.5"/><path d="m15 15 5 5"/></svg><input id="gallerySearch" type="search" placeholder="Buscar en la pared" aria-label="Buscar por título, artista o técnica"></label><button class="add-button" id="addArtwork" type="button"><span aria-hidden="true">＋</span> Añadir obra</button></div>
+      <section class="market-hero" id="marketHero" aria-labelledby="galleryTitle">
+        <div><p class="eyebrow"><span class="live-dot"></span> UN ENCUENTRO ENTRE ARTE Y PERSONAS</p><h1 tabindex="-1" id="galleryTitle">Arte que encuentra<br><em>su lugar.</em></h1><p class="hero-copy">Pinturas con historia. Artistas con una mirada propia.<br>Descubre esa obra que habla contigo.</p></div>
+        <div class="hero-note"><p>Una pared vacía.<br>Infinitas posibilidades.</p><span>DIRECTO DE SUS ARTISTAS</span></div>
       </section>
-      <div class="gallery-meta"><p><span class="demo-dot"></span> COLECCIÓN DE MUESTRA <span class="meta-divider">/</span> Las obras que añadas se conservan hasta recargar.</p><span id="resultsCount" role="status"></span></div>
-      <section class="gallery-wall" id="galleryWall" aria-label="Obras de la colección"></section>
-      <div class="empty-collection" id="emptyCollection" hidden><span aria-hidden="true">⌕</span><h2>Un pequeño espacio en blanco.</h2><p>No hay obras que coincidan con tu búsqueda.</p><button class="demo-entry" id="resetSearch" type="button">Ver toda la colección →</button></div>
-      <footer class="gallery-footer"><span>UNA PARED EN CALMA</span><span>HECHA PARA VOLVER</span><button id="backToTop" type="button" aria-label="Volver arriba">↑</button></footer>
+      <section id="profileHeader" class="profile-header" aria-label="Perfil del artista" hidden></section>
+      <section id="artistDirectory" class="artist-directory" aria-labelledby="artistsTitle" hidden><div class="section-heading"><div><p class="eyebrow">CONOCE SUS MIRADAS</p><h1 id="artistsTitle" tabindex="-1">Nuestros artistas</h1></div><p>Cada perfil, un universo propio.</p></div><div id="artistCards" class="artist-cards"></div></section>
+      <section id="feedSection" aria-labelledby="feedTitle">
+        <div class="feed-heading"><div><p class="eyebrow" id="feedEyebrow">LA GALERÍA, SIEMPRE ABIERTA</p><h2 id="feedTitle">Descubre tu próxima obra</h2></div><span id="resultsCount" role="status"></span></div>
+        <section class="collection-toolbar" aria-label="Filtros de pinturas">
+          <div class="category-tabs" id="categoryTabs" aria-label="Categorías"></div>
+          <div class="toolbar-tools"><label class="gallery-search"><span aria-hidden="true">⌕</span><input id="gallerySearch" type="search" placeholder="Buscar una obra o artista…" aria-label="Buscar obras, artistas o descripciones"></label><label class="sr-only" for="availabilityFilter">Disponibilidad</label><select id="availabilityFilter"><option value="all">Todas las obras</option><option value="available">Disponibles</option><option value="reserved">Reservadas</option><option value="sold">Vendidas</option></select><label class="sr-only" for="sortOrder">Orden de las obras</label><select id="sortOrder"><option value="recent">Más recientes</option><option value="price-asc">Menor precio</option><option value="price-desc">Mayor precio</option></select></div>
+        </section>
+        <p class="artwork-error collection-error" id="collectionError" role="alert" hidden></p><button class="demo-entry" id="retryCollection" type="button" hidden>Volver a cargar →</button>
+        <section class="gallery-wall" id="galleryWall" aria-label="Feed de pinturas"></section>
+        <div class="empty-collection" id="emptyCollection" hidden><h2 id="emptyTitle">Un espacio para nuevas historias.</h2><p id="emptyMessage">Todavía no hay pinturas publicadas.</p><button class="demo-entry" id="resetSearch" type="button">Limpiar filtros →</button></div>
+      </section>
+      <footer class="gallery-footer"><a class="footer-brand" href="#explore">nogal.</a><span>ARTE ORIGINAL. CONEXIONES REALES.</span><button id="backToTop" type="button" aria-label="Volver arriba">↑</button></footer>
     </main>
   </div>
   <dialog class="art-dialog" id="artDialog" aria-labelledby="artDialogTitle"><button class="dialog-close" type="button" aria-label="Cerrar detalles" autofocus>×</button><div id="artDialogContent"></div></dialog>
   <dialog class="add-dialog" id="addDialog" aria-labelledby="addDialogTitle">
     <button class="dialog-close" type="button" aria-label="Cerrar formulario">×</button>
-    <p class="eyebrow">UNA NUEVA HISTORIA</p><h2 id="addDialogTitle">Un lugar en tu pared.</h2><p class="add-description">Añade esa obra que quieres volver a mirar.</p>
+    <p class="eyebrow">TU PRÓXIMA OBRA</p><h2 id="addDialogTitle">Comparte tu mirada.</h2><p class="add-description">Tu imagen aparecerá en la galería para todos los visitantes.</p>
     <div class="upload-layout">
     <form id="artworkForm" class="artwork-form">
-      <label class="field form-wide upload-field">Adjuntar imagen<input id="artworkFile" name="imageFile" type="file" accept="image/*,.heic,.heif,.tif,.tiff,.avif" required aria-describedby="fileHelp"><span id="fileHelp">Selecciona una imagen de tu dispositivo. Máximo 25 MB.</span></label>
+      <label class="field form-wide upload-field">Adjuntar imagen<input id="artworkFile" name="imageFile" type="file" accept="image/jpeg,image/png,image/webp" required aria-describedby="fileHelp"><span id="fileHelp">JPG, PNG o WebP. Máximo 19 MB.</span></label>
       <label class="field form-wide">Título<input name="title" required maxlength="90" placeholder="Ej. Luz de invierno" autofocus></label>
       <label class="field">Artista<input name="artist" required maxlength="80" placeholder="Nombre del artista"></label>
       <label class="field">Año<input name="year" type="number" min="1000" required></label>
       <label class="field">Técnica<input name="medium" required maxlength="80" placeholder="Óleo sobre lienzo"></label>
-      <label class="field">Tamaño del cuadro<select name="frameSize"><option value="20x30">20 × 30 cm</option><option value="30x40" selected>30 × 40 cm</option><option value="40x50">40 × 50 cm</option><option value="50x70">50 × 70 cm</option><option value="60x90">60 × 90 cm</option><option value="30x30">30 × 30 cm · cuadrado</option><option value="50x50">50 × 50 cm · cuadrado</option></select></label>
+      <fieldset class="frame-picker form-wide"><legend>Elige tu marco</legend><p class="frame-picker-help">Explora los diseños de inspiración maya y los marcos clásicos. Mira cómo cambia tu pintura.</p><div class="frame-choices"><label class="frame-choice"><input type="radio" name="frameStyle" value="maya-greca" checked><span class="frame-swatch" data-frame-style="maya-greca" aria-hidden="true"><span></span></span><span>Maya · Greca escalonada</span></label><label class="frame-choice"><input type="radio" name="frameStyle" value="maya-rombos"><span class="frame-swatch" data-frame-style="maya-rombos" aria-hidden="true"><span></span></span><span>Maya · Tejido de rombos</span></label><label class="frame-choice"><input type="radio" name="frameStyle" value="maya-piedra"><span class="frame-swatch" data-frame-style="maya-piedra" aria-hidden="true"><span></span></span><span>Maya · Relieve de piedra</span></label><label class="frame-choice"><input type="radio" name="frameStyle" value="maya-espiral"><span class="frame-swatch" data-frame-style="maya-espiral" aria-hidden="true"><span></span></span><span>Maya · Espiral cuadrada</span></label><label class="frame-choice"><input type="radio" name="frameStyle" value="maya-celosia"><span class="frame-swatch" data-frame-style="maya-celosia" aria-hidden="true"><span></span></span><span>Maya · Celosía diagonal</span></label><label class="frame-choice"><input type="radio" name="frameStyle" value="maya-sol"><span class="frame-swatch" data-frame-style="maya-sol" aria-hidden="true"><span></span></span><span>Maya · Sol geométrico</span></label><label class="frame-choice"><input type="radio" name="frameStyle" value="walnut"><span class="frame-swatch" data-frame-style="walnut" aria-hidden="true"><span></span></span><span>Nogal clásico</span></label><label class="frame-choice"><input type="radio" name="frameStyle" value="oak"><span class="frame-swatch" data-frame-style="oak" aria-hidden="true"><span></span></span><span>Roble natural</span></label><label class="frame-choice"><input type="radio" name="frameStyle" value="mahogany"><span class="frame-swatch" data-frame-style="mahogany" aria-hidden="true"><span></span></span><span>Caoba</span></label><label class="frame-choice"><input type="radio" name="frameStyle" value="rustic"><span class="frame-swatch" data-frame-style="rustic" aria-hidden="true"><span></span></span><span>Madera rústica</span></label><label class="frame-choice"><input type="radio" name="frameStyle" value="black"><span class="frame-swatch" data-frame-style="black" aria-hidden="true"><span></span></span><span>Negro mate</span></label><label class="frame-choice"><input type="radio" name="frameStyle" value="white"><span class="frame-swatch" data-frame-style="white" aria-hidden="true"><span></span></span><span>Blanco mate</span></label><label class="frame-choice"><input type="radio" name="frameStyle" value="gold"><span class="frame-swatch" data-frame-style="gold" aria-hidden="true"><span></span></span><span>Dorado clásico</span></label><label class="frame-choice"><input type="radio" name="frameStyle" value="silver"><span class="frame-swatch" data-frame-style="silver" aria-hidden="true"><span></span></span><span>Plateado</span></label><label class="frame-choice"><input type="radio" name="frameStyle" value="bronze"><span class="frame-swatch" data-frame-style="bronze" aria-hidden="true"><span></span></span><span>Bronce</span></label><label class="frame-choice"><input type="radio" name="frameStyle" value="floating"><span class="frame-swatch" data-frame-style="floating" aria-hidden="true"><span></span></span><span>Caja flotante</span></label><label class="frame-choice"><input type="radio" name="frameStyle" value="canvas"><span class="frame-swatch" data-frame-style="canvas" aria-hidden="true"><span></span></span><span>Lienzo sobre bastidor</span></label><label class="frame-choice"><input type="radio" name="frameStyle" value="none"><span class="frame-swatch" data-frame-style="none" aria-hidden="true"><span></span></span><span>Sin marco</span></label></div></fieldset>
+      <label class="field form-wide">Paspartú (borde interior)<select name="matStyle"><option value="cream">Crema cálido</option><option value="white">Blanco</option><option value="black">Negro</option><option value="none">Sin paspartú</option></select></label>
+      <label class="field">Tamaño del cuadro<select name="frameSize"><option value="15x20">15 × 20 cm</option><option value="20x25">20 × 25 cm</option><option value="20x30">20 × 30 cm</option><option value="30x40" selected>30 × 40 cm</option><option value="40x50">40 × 50 cm</option><option value="40x60">40 × 60 cm</option><option value="50x70">50 × 70 cm</option><option value="60x80">60 × 80 cm</option><option value="60x90">60 × 90 cm</option><option value="70x100">70 × 100 cm</option><option value="80x120">80 × 120 cm</option><option value="100x150">100 × 150 cm</option><option value="20x20">20 × 20 cm · cuadrado</option><option value="30x30">30 × 30 cm · cuadrado</option><option value="40x40">40 × 40 cm · cuadrado</option><option value="50x50">50 × 50 cm · cuadrado</option><option value="60x60">60 × 60 cm · cuadrado</option><option value="80x80">80 × 80 cm · cuadrado</option><option value="20x60">20 × 60 cm</option><option value="30x90">30 × 90 cm</option></select></label>
       <label class="field">Categoría<select name="category"><option>Paisaje</option><option>Botánica</option><option>Abstracto</option><option>Otra</option></select></label>
       <label class="field">Orientación<select name="orientation"><option value="portrait">Vertical</option><option value="landscape">Horizontal</option></select></label>
-      <label class="field form-wide">Cómo colocar la imagen<select name="imageFit"><option value="contain">Imagen completa · sin recortar</option><option value="cover">Llenar el cuadro · recortar bordes</option></select></label><label class="field form-wide">Una pequeña historia<textarea name="description" required maxlength="500" rows="3" placeholder="Qué te inspira de esta obra…"></textarea></label>
+      <label class="field form-wide">Cómo colocar la imagen<select name="imageFit"><option value="contain">Imagen completa · sin recortar</option><option value="cover">Llenar el cuadro · recortar bordes</option></select></label><label class="field form-wide">Descripción de la pintura<textarea name="description" required maxlength="500" rows="3" placeholder="Cuenta su historia, los materiales y los detalles de la pintura…"></textarea></label>
+      <label class="field form-wide">Descripción visual de la imagen<textarea name="imageDescription" maxlength="300" rows="2" placeholder="Ej. Montañas verdes bajo un cielo naranja, pintadas con pinceladas suaves."></textarea><span>Ayuda a entender la imagen y se usa como texto alternativo.</span></label>
+      <label class="field">Precio (opcional)<input name="price" type="number" min="0.01" max="100000000" step="0.01" placeholder="Sin precio publicado"></label>
+      <label class="field">Moneda<select name="currency"><option value="GTQ">GTQ · Quetzales</option><option value="USD">USD · Dólares</option><option value="EUR">EUR · Euros</option></select></label>
+      <label class="field form-wide">Disponibilidad<select name="saleStatus"><option value="available">Disponible</option><option value="reserved">Reservada</option><option value="sold">Vendida</option></select></label>
       <p class="artwork-error form-wide" id="artworkError" role="alert" hidden></p>
-      <button class="submit form-wide" id="saveArtwork" type="submit" disabled><span>Añadir a mi pared</span><span aria-hidden="true">↗</span></button>
-      <p class="storage-note form-wide">Vista de muestra. Los cambios se perderán al recargar la página.</p>
+      <button class="submit form-wide" id="saveArtwork" type="submit" disabled><span>Publicar en la galería</span><span aria-hidden="true">↗</span></button>
+      <p class="storage-note form-wide">Tu pintura y su descripción serán públicas en tu perfil y en Explorar.</p>
     </form>
     <aside class="upload-preview" aria-label="Vista previa del cuadro"><p class="eyebrow">ASÍ QUEDARÁ EN TU PARED</p><div class="preview-wall" id="framePreview"></div><p class="preview-measurement" id="previewMeasurement"></p><p class="preview-file" id="previewFile" role="status">Adjunta una imagen para probarla.</p><p class="preview-note">Proporción del formato elegido; escala de pantalla ilustrativa. Algunos formatos, como HEIC, TIFF o RAW, necesitan convertirse a JPG o PNG si tu navegador no los abre.</p></aside>
     </div>
   </dialog>
+  <dialog class="profile-dialog" id="profileDialog" aria-labelledby="profileDialogTitle">
+    <button class="dialog-close" type="button" aria-label="Cerrar perfil">×</button>
+    <p class="eyebrow">TU ESPACIO CREATIVO</p><h2 id="profileDialogTitle">Editar perfil</h2>
+    <p class="add-description">Cuéntale a la comunidad quién está detrás de tus pinturas.</p>
+    <form id="profileForm" class="artwork-form">
+      <label class="field form-wide">Nombre público<input name="name" required maxlength="80" autocomplete="name"></label>
+      <label class="field form-wide">Especialidad<input name="specialty" maxlength="80" placeholder="Ej. Pintura al óleo y paisajes"></label>
+      <label class="field form-wide">Ubicación<input name="location" maxlength="80" placeholder="Ej. Ciudad de Guatemala"></label>
+      <label class="field form-wide">Biografía<textarea name="bio" maxlength="500" rows="4" placeholder="Tu inspiración, tu proceso, tu historia…"></textarea></label>
+      <p class="storage-note form-wide">Estos datos serán visibles en tu perfil público.</p>
+      <p class="artwork-error form-wide" id="profileError" role="alert" hidden></p>
+      <button class="submit form-wide" type="submit">Guardar perfil <span aria-hidden="true">↗</span></button>
+    </form>
+  </dialog>
 </body>
 </html>
-
-
-
-
-
