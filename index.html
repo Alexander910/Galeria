@@ -9,15 +9,15 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22/%3E">
   <script src="theme.js?v=mocha-beige-1"></script>
   <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="gallery.css?v=profile-contact-1">
+  <link rel="stylesheet" href="gallery.css?v=favorites-notifications-1">
   <script src="api.js?v=origin-49976-1" defer></script>
-  <script src="usuarios.js?v=profile-contact-1" defer></script>
+  <script src="usuarios.js?v=favorites-notifications-1" defer></script>
 </head>
 <body data-gallery="community">
   <div class="gallery-scene" id="galleryScene" hidden>
     <header class="site-header">
       <a class="site-brand" href="#explore" aria-label="Nogal, inicio"><span class="brand-mark" aria-hidden="true">n.</span> nogal<span class="brand-tag">ARTE ORIGINAL</span></a>
-      <nav class="main-nav" aria-label="Navegación principal"><a href="#explore" id="exploreLink">Explorar</a><a href="#artists" id="artistsLink">Artistas</a></nav>
+      <nav class="main-nav" aria-label="Navegación principal"><a href="#explore" id="exploreLink">Explorar</a><a href="#artists" id="artistsLink">Artistas</a><a href="#favorites" id="favoritesLink" hidden>Favoritos</a><a href="#notifications" id="notificationsLink" hidden>Notificaciones <span class="notification-badge" id="notificationBadge" hidden>0</span></a></nav>
       <div class="session-actions">
         <button class="theme-toggle" id="themeToggle" type="button" aria-label="Activar modo oscuro" title="Cambiar tema">☾</button>
         <button class="add-button primary-button" id="addArtwork" type="button">＋ Publicar obra</button>
@@ -34,6 +34,8 @@
       </section>
       <section id="profileHeader" class="profile-header" aria-label="Perfil del artista" hidden></section>
       <section id="artistDirectory" class="artist-directory" aria-labelledby="artistsTitle" hidden><div class="section-heading"><div><p class="eyebrow">CONOCE SUS MIRADAS</p><h1 id="artistsTitle" tabindex="-1">Nuestros artistas</h1></div><p>Cada perfil, un universo propio.</p></div><div id="artistCards" class="artist-cards"></div></section>
+      <section id="privateAccess" class="private-access" hidden><h1>Tu espacio personal.</h1><p>Inicia sesión para ver tus favoritos y notificaciones.</p><a class="add-button primary-button" href="login.html">Iniciar sesión</a></section>
+      <section id="notificationsSection" aria-labelledby="notificationsTitle" hidden><div class="section-heading"><div><p class="eyebrow">ACTIVIDAD EN TUS CUADROS</p><h1 id="notificationsTitle">Notificaciones</h1></div><button type="button" class="add-button" id="refreshNotifications">Actualizar</button></div><p id="notificationsStatus" class="storage-note" role="status"></p><div id="notificationsList" class="notifications-list"></div></section>
       <section id="feedSection" aria-labelledby="feedTitle">
         <div class="feed-heading"><div><p class="eyebrow" id="feedEyebrow">LA GALERÍA, SIEMPRE ABIERTA</p><h2 id="feedTitle">Descubre tu próxima obra</h2></div><span id="resultsCount" role="status"></span></div>
         <section class="collection-toolbar" aria-label="Filtros de pinturas">

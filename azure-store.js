@@ -1,4 +1,5 @@
 const { createHash } = require('node:crypto');
+const {seedUsers,validateUsers}=require('./user-accounts');
 
 const enabled = Boolean(process.env.TABLE_ENDPOINT || process.env.COSMOS_ENDPOINT);
 let database;
@@ -21,7 +22,11 @@ function tableDatabase(credential) {
     const entity = document => ({ partitionKey: document.kind, rowKey: document.id, payload: JSON.stringify(document) });
     return {
       item(id, kind) { return {
-        read: () => normalize(async () => ({ resource: JSON.parse((await client.getEntity(kind, id)).payload) })),
+        read: () => normalize(async () => {
+          const row = await client.getEntity(kind, id);
+          return { resource: { ...JSON.parse(row.payload), _etag: row.etag } };
+        }),
+        replace: (document, options) => normalize(() => client.updateEntity(entity(document), 'Replace', { etag: options.accessCondition.condition })),
         delete: () => normalize(() => client.deleteEntity(kind, id)),
       }; },
       items: {
@@ -58,24 +63,7 @@ async function initialize() {
     if (!response.ok) throw new Error('No se pudo obtener la configuración de usuarios desde Key Vault.');
     bootstrap = (await response.json()).value;
   }
-  const configured = JSON.parse(bootstrap || '[]');
-  if (configured.length !== 3 || configured.map(user => user.username).sort().join(',') !== 'Astid,Elvia,Zulema') {
-    throw new Error('Configura únicamente los tres usuarios autorizados en BOOTSTRAP_USERS_JSON.');
-  }
-  for (const user of configured) {
-    if (!/^[a-f0-9]{128}$/.test(user.passwordHash) || !/^[a-f0-9]{32}$/.test(user.passwordSalt)) throw new Error('Configuración de usuarios inválida.');
-    const document = { ...user, id: user.username.toLowerCase(), kind: 'user' };
-    let existing;
-    try { existing = (await container('users').item(document.id, 'user').read()).resource; }
-    catch (error) { if (error.code !== 404) throw error; }
-    if (!existing) {
-      try { await container('users').items.create(document); }
-      catch (error) { if (Number(error.code || error.statusCode) !== 409) throw error; }
-    }
-  }
-  const { resources } = await container('users').items.query('SELECT * FROM c').fetchAll();
-  if (resources.length !== 3 || resources.some(user => !configured.some(expected => expected.username === user.username))) throw new Error('La base de datos debe contener solo los tres usuarios autorizados.');
-  return resources;
+  return seedUsers(container('users'),JSON.parse(bootstrap || '[]'));
 }
 
 async function list() {
@@ -100,8 +88,7 @@ async function analyze(bytes) {
 
 async function saveWork(work, bytes, type, previous) {
   if (previous && !bytes) {
-    await container('artworks').items.upsert({ ...work, kind: 'artwork' });
-    return work;
+    return updateArtwork(work.id, current => ({ ...work, likedBy: current.likedBy || [], comments: current.comments || [], kind: 'artwork' }));
   }
   const existing = await list();
   const remaining = existing.filter(entry => entry.id !== previous?.id);
@@ -113,10 +100,33 @@ async function saveWork(work, bytes, type, previous) {
   const blob = images.getBlockBlobClient(filename);
   await blob.uploadData(bytes, { blobHTTPHeaders: { blobContentType: `image/${type}` } });
   const document = { ...work, byteSize: bytes.length, labels, processedAt: new Date().toISOString(), analysisProvider: 'Azure AI Vision', kind: 'artwork' };
-  try { await container('artworks').items[previous ? 'upsert' : 'create'](document); }
+  let saved = document;
+  try {
+    if (previous) saved = await updateArtwork(work.id, current => ({ ...document, likedBy: current.likedBy || [], comments: current.comments || [] }));
+    else await container('artworks').items.create(document);
+  }
   catch (error) { await blob.deleteIfExists().catch(() => {}); throw error; }
   if (previous) await images.getBlockBlobClient(previous.imageUrl.split('/').pop()).deleteIfExists().catch(() => {});
-  return document;
+  return saved;
+}
+
+// Condiciones de versión para conservar reacciones y comentarios entre réplicas.
+async function updateArtwork(id, change) {
+  for (let attempt = 0; attempt < 8; attempt++) {
+    const item = container('artworks').item(id, 'artwork');
+    try {
+      const { resource } = await item.read();
+      const { _rid, _self, _etag, _attachments, _ts, ...current } = resource;
+      const updated = change(current);
+      await item.replace(updated, { accessCondition: { type: 'IfMatch', condition: _etag } });
+      return updated;
+    } catch (error) {
+      const status = Number(error.statusCode || error.code);
+      if (status === 404) throw Object.assign(new Error('La imagen ya no está disponible.'), { status: 404 });
+      if (status !== 412) throw error;
+    }
+  }
+  throw Object.assign(new Error('Hay muchos cambios en esta obra. Inténtalo de nuevo.'), { status: 409 });
 }
 
 async function deleteWork(work) {
@@ -130,7 +140,7 @@ async function saveUser(user) {
 
 async function listUsers() {
   const { resources } = await container('users').items.query('SELECT * FROM c').fetchAll();
-  return resources;
+  return validateUsers(resources);
 }
 
 async function getUser(id) {
@@ -163,4 +173,4 @@ async function saveImage(filename, bytes, type) {
 async function deleteImage(filename) {
   await images.getBlockBlobClient(filename).deleteIfExists();
 }
-module.exports = { enabled, initialize, list, saveWork, deleteWork, saveUser, listUsers, getUser, image, saveImage, deleteImage, getSession, setSession, deleteSession };
+module.exports = { enabled, initialize, list, saveWork, deleteWork, updateArtwork, saveUser, listUsers, getUser, image, saveImage, deleteImage, getSession, setSession, deleteSession };

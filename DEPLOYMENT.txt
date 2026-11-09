@@ -1,69 +1,116 @@
-ESTADO ACTUAL: RECURSOS FACTURABLES ELIMINADOS POR INSTRUCCIÓN DEL RESPONSABLE
-El grupo nogal-final ya no existe. No quedan VMs, discos, almacenamiento, base,
-Vision, Key Vault, IPs, NAT ni redes del proyecto. La web está fuera de línea.
-Solo quedan las dos instancias automáticas de Network Watcher sin flow logs,
-Connection Monitor ni capturas activos; no generan cobro por su mera habilitación.
-La revisión automática impidió borrar NetworkWatcherRG por posible uso compartido;
-se completó el cierre sin eliminar ese grupo.
-Respaldo local actual verificado: data/backups/20261107-034140.zip,
-con cinco imágenes actuales, catálogo y tres usuarios con perfiles y hashes.
-Consumo mostrado en el portal al cerrar: USD 0.03. Es provisional y puede aumentar
-al registrarse consumo anterior pendiente. No se comprobó el saldo de crédito restante.
-La infraestructura y pruebas descritas a continuación son historial anterior al cierre.
-Cierre verificado (Guatemala): 2026-11-06 21:49:20 -06:00
+VERSIÓN LOCAL VERIFICADA PARA EL SIGUIENTE DESPLIEGUE
+La autorización del docente para usar Azure fue confirmada por el responsable en este chat.
+El entorno de Azure continúa sin reactivarse; estas comprobaciones son locales.
+Se corrigió la compatibilidad con los UUID de las cuentas anteriores sin cambiar contraseñas.
+Se recuperaron cinco obras y tres perfiles del respaldo; imágenes verificadas con SHA-256.
+Recorrido comprobado en copia aislada con dos cuentas: login, publicación, foto y contacto,
+corazones, comentarios, favoritos, notificación al artista y lectura persistente tras reiniciar.
+Los archivos de datos reales permanecieron intactos durante esa prueba de aceptación.
+Pruebas automatizadas: seis aprobadas. Evidencia local privada: output/verification/local-acceptance.json.
+Paquete: 35 archivos verificados, excluyendo datos, credenciales, respaldos y cachés.
+El transporte usa XZ/Base85 y reconstruye el tar.gz en la VM para respetar el límite de ARM.
+Plantilla compilada sin errores: data/deploy/verified-five-servers.json.
+Respaldo privado actualizado y archivo de restauración: rutas en data/deploy/release-backup-path.txt
+ y data/deploy/verified-release-restore.tar.gz; conservan los UUID y propietarios locales.
+Suscripción Azure for Students activa. Cost Management consultado: USD 1.393805204 acumulados
+este mes para nogal-final; no representa el saldo de crédito y puede actualizarse con retraso.
+La creación de recursos y la verificación final de etiquetas, continuidad y restauración
+sobre Azure siguen pendientes. No se debe presentar esta revisión como evidencia en nube.
 
-NOGAL — ESTADO ACTUAL EN AZURE
-Verificado el 6 de noviembre de 2026.
+ESTADO ACTUAL: GRUPO NOGAL-FINAL ELIMINADO
+El responsable confirmó expresamente eliminar el grupo y conservar el respaldo local.
+Los cinco servidores se desasignaron primero; después Azure eliminó el grupo completo.
+Verificado: group exists = false. No quedan recursos facturables del proyecto.
+Solo permanecen las dos instancias automáticas de Network Watcher, sin flow logs,
+Connection Monitor ni capturas activos. No se modificó NetworkWatcherRG.
+La galería está fuera de línea. No se programó ningún redespliegue automático.
+Respaldo local verificado: data/backups/20261108-021808.zip.
+Contiene cinco obras y tres usuarios con perfiles; todas las referencias a imágenes
+se verificaron contra el manifiesto y las sumas SHA-256. No incluye sesiones.
+La consulta de consumo de Azure devolvió HTTP 429; no se obtuvo un importe actualizado.
+Los cargos anteriores pueden seguir apareciendo mientras Azure procesa el consumo.
+CAMBIO LOCAL POSTERIOR AL CIERRE: ADMINISTRACIÓN DE USUARIOS
+Se retiró la restricción de tres cuentas. Astid, Zulema y Elvia se conservan como
+cuentas iniciales, sin reemplazar contraseñas ni perfiles existentes en cada arranque.
+El alta administrativa usa infra/vm/New-NogalUser.ps1 y Azure Run Command para
+insertar cuentas en la tabla privada users, mediante la identidad de la aplicación.
+Instrucciones completas: infra/vm/USUARIOS-AZURE.txt.
+Pruebas locales: cuenta adicional con inicio de sesión y persistencia; conservación
+de cuentas previas; rechazo de duplicados y generación de hashes sin texto de clave.
+Este cambio NO está desplegado. No se reactivaron recursos ni se crearon cuentas
+en Azure. Al reactivar el proyecto, desplegar esta versión en ambas aplicaciones.
+
+La información siguiente es historial de la infraestructura antes de este cierre.
+Verificación de cierre (Guatemala): 2026-11-07 20:26:48 -06:00
+
+ESTADO ACTUAL: NOGAL REACTIVADO EN AZURE
+Verificado el 7 de noviembre de 2026, horario de Guatemala.
 
 Principal: https://nogal-uietolmehuftu-1.northcentralus.cloudapp.azure.com
 Alternativo: https://nogal-uietolmehuftu-2.belgiumcentral.cloudapp.azure.com
-Grupo: nogal-final. Despliegue: nogal-final-v3, Succeeded.
+Grupo: nogal-final.
+Despliegue: nogal-reactivacion-final-20261107, Succeeded.
 
-CINCO SERVIDORES EN EJECUCIÓN
-nogal-proxy-1: North Central US, Caddy HTTPS y HAProxy.
-nogal-proxy-2: Belgium Central, Caddy HTTPS y HAProxy alternativo.
-nogal-app-1 y nogal-app-2: North Central US, Docker bajo systemd, datos compartidos.
-nogal-ops: Belgium Central, respaldos privados diarios a las 06:30 UTC.
-Tamaño: Standard_B2ats_v2. Aplicaciones dentro de un conjunto de disponibilidad.
-Administración por Azure Run Command, sin SSH público.
+SERVIDORES
+nogal-proxy-1 y nogal-proxy-2: Caddy HTTPS y HAProxy.
+nogal-app-1 y nogal-app-2: aplicación Docker bajo systemd.
+nogal-ops: respaldo privado diario.
+Las cinco VMs están en ejecución y usan Standard_B2ats_v2.
+Primary: North Central US. Proxy alternativo y operaciones: Belgium Central.
+Los proxies distribuyen a las dos aplicaciones privadas. No hay SSH público.
+La conmutación entre URLs de proxies es manual. La base y ambas apps están en
+la región primaria; no se afirma recuperación ante una caída regional completa.
 
-DATOS
-Tables: nogaldbuietolmehuftu; users, sessions, artworks; endpoint privado,
-acceso público deshabilitado y claves compartidas deshabilitadas.
+RESTAURACIÓN Y SEGURIDAD
+Origen: data/backups/20261107-034140.zip.
+Se restauraron cinco obras, tres usuarios y sus perfiles; se conservaron IDs,
+fechas, etiquetas y archivos. Las cinco imágenes coincidieron por SHA-256.
+Usuarios: Astid, Zulema y Elvia. Credenciales entregadas por separado.
+El sitio incluye los estilos mayas actuales del código local.
+Tables: nogaldbuietolmehuftu; endpoint privado; claves compartidas deshabilitadas.
 Blob: nogaluietolmehuftu; contenedores privados images y backups.
-Análisis: nogal-vision-uietolmehuftu, Azure AI Vision S1, identidad administrada.
-Key Vault: nogal-kv-uietolmehuftu; configuración inicial de usuarios por RBAC.
-Usuarios: Astid, Zulema y Elvia. Contraseñas entregadas por separado y hashes scrypt.
-Siete imágenes recuperadas con propietarios y contenido conservados.
-La importación por API asignó nuevos IDs y fechas y repitió el análisis de etiquetas.
+Vision: nogal-vision-uietolmehuftu, S1, autenticación con identidad administrada.
+Key Vault: nogal-kv-uietolmehuftu, recuperado por borrado lógico.
+Las asignaciones temporales usadas para transferir el respaldo se retiraron.
 
-PRUEBAS
-Tres accesos correctos; sesiones atendidas por app1 y app2; edición 200, edición ajena
-403, eliminación temporal 200 y rechazo de archivo inválido 400.
-Continuidad: 164 solicitudes autenticadas, sin fallos, con app1 detenida 25 segundos.
-Ambas réplicas recuperadas. Backup 2026-11-06T22-50-46-796Z.tar.gz: tres usuarios,
-siete obras y siete imágenes. Descargado y validado en dry-run sin restaurar producción.
-El sondeo /api/health comprueba el proceso HTTP, no todos sus servicios dependientes.
+VERIFICACIÓN
+Tres inicios de sesión, atención por app1 y app2, cinco imágenes verificadas.
+Prueba temporal: análisis de Vision con 14 etiquetas, edición de marco maya,
+rechazo de edición ajena 403 y eliminación de la publicación temporal 200.
+Continuidad: 120 solicitudes autenticadas, 0 fallos, con app1 detenida 25 segundos.
+Ambas réplicas recuperadas. Health comprueba proceso HTTP, no todas sus dependencias.
+Backup: 2026-11-07T22-25-07-534Z.tar.gz; 3 usuarios, 5 obras, 5 imágenes.
+Timer de respaldo activo, 06:30 UTC / 00:30 Guatemala.
+Evidencias: data/deploy/reactivation-check.json, reactivation-restore.json,
+continuity.json y reactivation-evidence/.
 
-ARCHIVOS VIGENTES
-infra/vm/main.bicep y server.bicep: infraestructura de cinco servidores.
-infra/vm/proxy-init.sh: HAProxy y Caddy.
-infra/vm/build-package.py: fuente permitida e instalador.
-infra/vm/backup.cjs y restore.cjs: respaldo y recuperación.
-infra/vm/RECUPERACION.txt: comandos, seguridad, recuperación y cierre.
-data/deploy: plantillas compiladas, parámetros PRIVADOS y evidencias.
-output: informe, guía, presentación y entrega depurada.
-infra/main.bicep e infra/app.bicep son la arquitectura anterior de Container Apps;
-no utilizarlas para reproducir el despliegue actual de cinco servidores.
-El docente autorizó usar servicios equivalentes de Azure, según el registro previo.
+DOCUMENTACIÓN
+output/word/Documentacion-paso-a-paso-Nogal.docx.
+Infraestructura vigente: infra/vm/main.bicep, server.bicep y proxy-init.sh.
+Empaquetado: infra/vm/build-package.py.
+Restauración local: infra/vm/prepare-local-restore.py y restore-local-backup.ps1.
+Los archivos infra/main.bicep e infra/app.bicep pertenecen a una arquitectura anterior.
+Los parámetros privados, llaves, respaldos y sesiones permanecen fuera de Git.
 
-LÍMITES Y COSTOS
-El acceso al proxy alternativo requiere cambiar la URL manualmente. Las aplicaciones
-y la base siguen en la región primaria. No se comprobó recuperación regional ni una
-restauración completa sobre producción. El respaldo no incluye sesiones.
-Límite autorizado: USD 50 incluyendo crédito. Estimación de uso pequeño durante unos
-seis días: USD 25–35, pendiente de cargos reales en Cost Management.
-El presupuesto nogal-50-usd NO detiene cobros. Detener VMs no elimina cargos de NAT,
-IPs, discos, endpoint privado o datos. Después de la exposición del 11 de noviembre
-hay que respaldar y autorizar el retiro de recursos para evitar consumo indefinido.
-No se han eliminado los datos ni programado su eliminación.
+COSTOS
+Límite total autorizado: USD 50 incluyendo crédito de estudiante.
+Consumo registrado antes de esta reactivación: aproximadamente USD 0.76,
+provisional y sujeto a actualización; no representa saldo de crédito restante.
+El presupuesto nogal-50-usd no detiene el consumo. NAT, IPs, discos y datos siguen
+cobrando incluso con VMs desasignadas. La infraestructura queda activa por solicitud
+del responsable; no se programó eliminación automática.
+
+ACTUALIZACIÓN DE FOTO DE PERFIL — 7 DE NOVIEMBRE DE 2026
+Release profile-20261107232324 instalada de forma secuencial en nogal-app-1 y
+nogal-app-2 mediante la extensión nogal-setup. La foto usa el contenedor privado
+images y su referencia se comparte mediante la tabla users. Máximo por foto: 2 MB.
+Se verificaron carga, reemplazo, eliminación, persistencia tras reiniciar la réplica
+de carga y entrega desde ambas réplicas y ambos accesos públicos. La foto temporal
+se retiró al terminar, conservando los perfiles existentes.
+Los archivos usuarios.js, index.html y gallery.css servidos por ambas réplicas
+coinciden por SHA-256 con el código local. No se modificaron cuentas ni contraseñas.
+Se ajustaron respaldo local y restauración para incluir las fotos de perfil.
+Respaldo privado con una foto temporal: 2026-11-07T23-27-38-321Z.tar.gz,
+validado sin escritura con 3 usuarios, 5 obras y 6 imágenes.
+Respaldo local final limpio: data/backups/20261107-233437.zip.
+Evidencias: data/deploy/profile-photo-verification.json y profile-photo-release.json.

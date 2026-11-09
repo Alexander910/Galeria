@@ -40,3 +40,28 @@ dialog{background:var(--surface);color:var(--ink);border:1px solid var(--line);b
 .profile-contact-fields{display:grid;gap:16px;border:1px solid var(--line);border-radius:8px;padding:18px;margin:0;min-width:0}
 .profile-contact-fields legend{font-size:12px;padding:0 5px;color:var(--ink)}
 @media(max-width:520px){.profile-photo-editor{gap:14px}.profile-photo-editor .profile-avatar{width:70px;height:70px}}
+
+/* Corazones: una reacción por cuenta y obra. */
+.artwork-likes{display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;margin:0 0 14px;min-height:40px}
+.heart-button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-width:64px;min-height:44px;padding:4px 10px 4px 0;border:0;border-radius:6px;background:transparent;color:var(--muted);text-decoration:none;cursor:pointer}
+.heart-symbol{font-family:Arial,sans-serif;font-size:30px;line-height:1;transition:transform .18s ease,color .18s ease}
+.heart-count{font-size:12px;font-variant-numeric:tabular-nums}
+.heart-button:hover{color:var(--ink)}.heart-button:hover .heart-symbol{transform:scale(1.12)}
+.heart-button[aria-pressed=true]{color:#AE483E}
+[data-theme=dark] .heart-button[aria-pressed=true]{color:#F09D90}
+.heart-button:disabled{cursor:wait;opacity:.6}.heart-message{font-size:11px;line-height:1.6;color:var(--danger);flex:1;min-width:0}
+@media(prefers-reduced-motion:reduce){.heart-symbol{transition:none}.heart-button:hover .heart-symbol{transform:none}}
+
+/* Conversación pública de cada cuadro. */
+.post-social{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}.post-social .artwork-likes{margin:0;flex:1}.post-social:has(.heart-message:not(:empty)){flex-wrap:wrap}
+.comment-count{white-space:nowrap;min-height:44px}.comments-section{border-top:1px solid var(--line);padding-top:22px;margin-top:24px}
+.comments-section h3{font:400 25px var(--serif);margin:0 0 18px}.comment-list{display:grid;gap:16px;max-height:360px;overflow-y:auto;overscroll-behavior:contain}
+.comment{border-bottom:1px solid var(--line);padding-bottom:14px}.comment-heading{display:flex;align-items:center;justify-content:space-between;gap:10px}.comment-heading time{font-size:9px;color:var(--muted);white-space:nowrap}
+.comment-text{font-size:12px;line-height:1.8;white-space:pre-wrap;overflow-wrap:anywhere;margin:10px 0}.comment-empty{font-size:12px;line-height:1.8;color:var(--muted);margin:0 0 18px}.delete-comment{color:var(--danger);min-height:32px}
+.comment-form{display:grid;gap:10px;margin:22px 0 14px}.comment-form .primary-button{justify-self:start}.comment-form textarea{min-height:85px}
+
+.notification-badge{display:inline-grid;place-items:center;min-width:18px;height:18px;padding:0 4px;border-radius:12px;background:var(--accent);color:var(--accent-ink);font-size:9px;margin-left:6px}
+.notifications-list{display:grid;gap:14px;max-width:820px;padding:24px 0 65px;min-height:240px}.notification-card{display:grid;gap:10px;width:100%;padding:24px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);text-align:left}
+.notification-card.unread{border-left:4px solid var(--accent);background:var(--surface-raised)}.notification-card:hover{border-color:var(--accent)}.notification-card strong{font-size:14px;font-weight:500;overflow-wrap:anywhere}.notification-state{font-size:9px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted)}
+.notification-excerpt{font-size:12px;line-height:1.8;overflow-wrap:anywhere}.notification-card time{font-size:10px;color:var(--muted)}.notification-empty{padding:45px 20px;color:var(--muted);font-size:13px;line-height:1.8;border:1px dashed var(--line);border-radius:12px}.private-access{padding:60px 0 90px}.private-access h1{font:400 45px var(--serif)}.private-access p{color:var(--muted);font-size:13px;margin-bottom:24px}
+@media(max-width:780px){.main-nav{gap:12px;justify-content:space-between}.main-nav a{font-size:11px}.notification-badge{font-size:8px;min-width:16px;height:16px;margin-left:3px}.notification-card{padding:20px}}

@@ -1,20 +1,20 @@
 from pathlib import Path
-import tarfile, base64, json
+import tarfile, base64, json, gzip, lzma
 root=Path.cwd()
 output=root/'data'/'deploy'; output.mkdir(parents=True,exist_ok=True)
-files=['server.js','gallery-store.js','azure-store.js','index.html','usuarios.html','login.html','api.js','usuarios.js','login.js','theme.js','style.css','gallery.css','Dockerfile','package.json','package-lock.json','infra/vm/backup.cjs']
+files=['server.js','gallery-store.js','azure-store.js','user-accounts.js','index.html','usuarios.html','login.html','api.js','usuarios.js','login.js','theme.js','style.css','gallery.css','Dockerfile','package.json','package-lock.json','infra/vm/backup.cjs','infra/vm/manage-users.cjs']
 with tarfile.open(output/'nogal-source.tar.gz','w:gz') as archive:
  for name in files:
   archive.add(root/name,arcname=name)
  for asset in sorted((root/'assets').iterdir()):
   if asset.is_file(): archive.add(asset,arcname=f'assets/{asset.name}')
-payload=base64.b64encode((output/'nogal-source.tar.gz').read_bytes()).decode('ascii')
+payload=base64.b85encode(lzma.compress(gzip.decompress((output/'nogal-source.tar.gz').read_bytes()),preset=9)).decode('ascii')
 script='''#!/bin/bash
 set -euo pipefail
 export DEBIAN_FRONTEND=noninteractive
 cloud-init status --wait || true
 apt-get update -qq
-apt-get install -y -qq docker.io
+apt-get install -y -qq docker.io python3
 if [ ! -f /swapfile ]; then
   fallocate -l 1G /swapfile
   chmod 600 /swapfile
@@ -23,7 +23,7 @@ if [ ! -f /swapfile ]; then
   printf '/swapfile none swap sw 0 0\\n' >> /etc/fstab
 fi
 install -d -m 755 /opt/nogal /etc/nogal
-base64 -d > /opt/nogal-source.tar.gz <<'NOGAL_SOURCE'
+python3 -c "import sys,base64,gzip,lzma;sys.stdout.buffer.write(gzip.compress(lzma.decompress(base64.b85decode(sys.stdin.buffer.read().strip()))))" > /opt/nogal-source.tar.gz <<'NOGAL_SOURCE'
 '''+payload+'''
 NOGAL_SOURCE
 tar -xzf /opt/nogal-source.tar.gz -C /opt/nogal
@@ -92,4 +92,4 @@ fi
 '''
 (output/'app-init.sh').write_text(script,encoding='utf-8',newline='\n')
 print('Paquete de aplicación: %s bytes; script: %s bytes; sin usuarios ni contraseñas.'%((output/'nogal-source.tar.gz').stat().st_size,len(script.encode())))
-if len(script.encode())>256000: raise SystemExit('El script supera el límite de la extensión.')
+if len(script.encode())>130000: raise SystemExit('El script excede el margen del comando ARM; reducir el paquete antes de desplegar.')

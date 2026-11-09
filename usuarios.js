@@ -24,6 +24,9 @@ const saveArtwork = $('saveArtwork');
 let profiles = [];
 let activeCategory = 'Todas';
 let activeProfile = null;
+let favoritesActive = false;
+let notifications = [];
+let notificationsLoading = false;
 let editingWork = null;
 let draftImage = null;
 let fileGeneration = 0;
@@ -116,12 +119,128 @@ function renderCategories() {
   }));
 }
 function statusBadge(work) { return node('span', `status-badge status-${work.saleStatus || 'available'}`, statusNames[work.saleStatus] || 'Disponible'); }
+const pendingLikes = new Set();
+function updateLikeControls(work) {
+  for (const control of document.querySelectorAll('[data-like-work]')) {
+    if (control.dataset.likeWork !== work.id) continue;
+    const liked = Boolean(currentUser && work.liked);
+    const count = work.likeCount || 0;
+    control.querySelector('.heart-symbol').textContent = liked ? '♥' : '♡';
+    control.querySelector('.heart-count').textContent = String(count);
+    if (control.tagName === 'BUTTON') {
+      control.setAttribute('aria-pressed', String(liked));
+      control.setAttribute('aria-label', (liked ? 'Quitar corazón de ' : 'Dar corazón a ') + work.title + '. ' + count + ' corazones');
+      control.disabled = pendingLikes.has(work.id);
+    }
+  }
+}
+function likeControl(work) {
+  const group = node('div', 'artwork-likes');
+  const control = node(currentUser ? 'button' : 'a', 'heart-button');
+  control.dataset.likeWork = work.id;
+  const symbol = node('span', 'heart-symbol', currentUser && work.liked ? '♥' : '♡');
+  symbol.setAttribute('aria-hidden', 'true');
+  control.append(symbol, node('span', 'heart-count', String(work.likeCount || 0)));
+  const errorMessage = node('span', 'heart-message'); errorMessage.setAttribute('role', 'status');
+  if (!currentUser) {
+    control.href = 'login.html';
+    control.setAttribute('aria-label', 'Inicia sesión para dar un corazón a ' + work.title + '. ' + (work.likeCount || 0) + ' corazones');
+    control.title = 'Inicia sesión para dar un corazón';
+  } else {
+    control.type = 'button';
+    control.setAttribute('aria-pressed', String(Boolean(work.liked)));
+    control.setAttribute('aria-label', (work.liked ? 'Quitar corazón de ' : 'Dar corazón a ') + work.title + '. ' + (work.likeCount || 0) + ' corazones');
+    control.disabled = pendingLikes.has(work.id);
+    control.addEventListener('click', async () => {
+      if (pendingLikes.has(work.id)) return;
+      const liked = !work.liked;
+      pendingLikes.add(work.id); errorMessage.textContent = ''; updateLikeControls(work);
+      try {
+        const result = isDemo ? { liked, likeCount: Math.max(0, (work.likeCount || 0) + (liked ? 1 : -1)) }
+          : await nogalApi.request('/api/artworks/' + work.id + '/like', { method: liked ? 'PUT' : 'DELETE' });
+        Object.assign(work, result);
+      } catch (error) { errorMessage.textContent = error.message; }
+      finally { pendingLikes.delete(work.id); updateLikeControls(work); if (favoritesActive) renderGallery(); }
+    });
+  }
+  group.append(control, errorMessage);
+  return group;
+}
+function updateCommentCounts(work) {
+  for (const control of document.querySelectorAll('[data-comment-work]')) {
+    if (control.dataset.commentWork === work.id) control.textContent = 'Comentarios (' + (work.comments || []).length + ')';
+  }
+}
+function commentsSection(work) {
+  const section = node('section', 'comments-section');
+  section.setAttribute('aria-label', 'Comentarios de ' + work.title);
+  section.append(node('h3', '', 'Comentarios (' + (work.comments || []).length + ')'));
+  const errorMessage = node('p', 'artwork-error'); errorMessage.setAttribute('role', 'status');
+  let busy = false;
+  const refresh = () => {
+    updateCommentCounts(work);
+    if (!section.isConnected) return;
+    const next = commentsSection(work); section.replaceWith(next);
+    (next.querySelector('textarea') || next.querySelector('a, button'))?.focus();
+  };
+  const list = node('div', 'comment-list');
+  if (!(work.comments || []).length) list.append(node('p', 'comment-empty', 'Sé la primera persona en comentar esta obra.'));
+  for (const comment of work.comments || []) {
+    const entry = node('article', 'comment');
+    const author = profiles.find(profile => profile.id === comment.userId) || { id: comment.userId, name: comment.authorName || 'Artista' };
+    const heading = node('div', 'comment-heading'); heading.append(profileLink(author));
+    const time = node('time', '', new Date(comment.createdAt).toLocaleDateString('es-GT', { day: 'numeric', month: 'short', year: 'numeric' })); time.dateTime = comment.createdAt; heading.append(time);
+    entry.append(heading, node('p', 'comment-text', comment.text));
+    if (currentUser && (currentUser.id === comment.userId || canManage(work))) {
+      const remove = node('button', 'text-button delete-comment', 'Borrar comentario'); remove.type = 'button';
+      remove.addEventListener('click', async () => {
+        if (busy) return; busy = true; remove.disabled = true; errorMessage.textContent = '';
+        try {
+          if (isDemo) work.comments = work.comments.filter(item => item.id !== comment.id);
+          else work.comments = (await nogalApi.request('/api/artworks/' + work.id + '/comments/' + comment.id, { method: 'DELETE' })).comments;
+          refresh();
+        } catch (error) { errorMessage.textContent = error.message; }
+        finally { busy = false; remove.disabled = false; }
+      });
+      entry.append(remove);
+    }
+    list.append(entry);
+  }
+  section.append(list);
+  if (currentUser) {
+    const form = node('form', 'comment-form');
+    const label = node('label', 'field', 'Tu comentario');
+    const textarea = node('textarea'); textarea.name = 'comment'; textarea.required = true; textarea.maxLength = 500; textarea.rows = 3; textarea.placeholder = 'Comparte lo que te inspira esta obra…'; label.append(textarea);
+    const help = node('span', 'storage-note', 'Máximo 500 caracteres. Tu comentario será público.');
+    const submit = node('button', 'add-button primary-button', 'Publicar comentario'); submit.type = 'submit';
+    form.append(label, help, submit);
+    form.addEventListener('submit', async event => {
+      event.preventDefault(); if (busy) return;
+      const text = textarea.value.trim();
+      if (!text) { errorMessage.textContent = 'Escribe un comentario.'; textarea.focus(); return; }
+      busy = true; form.inert = true; submit.disabled = true; errorMessage.textContent = '';
+      try {
+        if (isDemo) {
+          if ((work.comments || []).length >= 30) throw new Error('Esta obra alcanzó el límite de 30 comentarios.');
+          work.comments = [...(work.comments || []), { id: crypto.randomUUID(), userId: currentUser.id, authorName: currentUser.name, text, createdAt: new Date().toISOString() }];
+        } else work.comments = (await nogalApi.request('/api/artworks/' + work.id + '/comments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }) })).comments;
+        refresh();
+      } catch (error) { errorMessage.textContent = error.message; }
+      finally { busy = false; form.inert = false; submit.disabled = false; }
+    });
+    section.append(form);
+  } else {
+    const link = node('a', 'demo-entry', 'Inicia sesión para comentar →'); link.href = 'login.html'; section.append(link);
+  }
+  section.append(errorMessage);
+  return section;
+}
 function renderGallery() {
   const needle = normalize(searchInput.value.trim());
   const availability = $('availabilityFilter').value;
   const visible = works.filter(work => {
     const seller = profileFor(work);
-    return (!activeProfile || work.userId === activeProfile) && (activeCategory === 'Todas' || work.category === activeCategory) &&
+    return (!favoritesActive || (currentUser && work.liked)) && (!activeProfile || work.userId === activeProfile) && (activeCategory === 'Todas' || work.category === activeCategory) &&
       (availability === 'all' || (work.saleStatus || 'available') === availability) &&
       normalize(`${work.title} ${work.artist} ${work.medium} ${work.category} ${work.description} ${work.imageDescription || ''} ${seller.name}`).includes(needle);
   });
@@ -151,7 +270,12 @@ function renderGallery() {
     details.setAttribute('aria-label', `Ver detalles de ${work.title}`);
     details.addEventListener('click', () => openArtwork(work, details));
     footer.append(node('span', 'post-category', work.category), details);
-    body.append(footer);
+    const social = node('div', 'post-social');
+    const comments = node('button', 'text-button comment-count', 'Comentarios (' + (work.comments || []).length + ')');
+    comments.type = 'button'; comments.dataset.commentWork = work.id;
+    comments.addEventListener('click', () => { openArtwork(work, comments); artDialog.querySelector('.comments-section').scrollIntoView({ block: 'nearest' }); });
+    social.append(likeControl(work), comments);
+    body.append(social, footer);
     card.append(header, woodFrame(work), body);
     if (canManage(work)) card.append(managementActions(work));
     else card.append(node('div', 'artwork-actions artwork-actions-placeholder'));
@@ -160,8 +284,8 @@ function renderGallery() {
   $('resultsCount').textContent = `${visible.length} ${visible.length === 1 ? 'obra' : 'obras'}`;
   $('emptyCollection').hidden = visible.length !== 0 || loading;
   const hasFilters = needle || activeCategory !== 'Todas' || availability !== 'all';
-  $('emptyTitle').textContent = hasFilters ? 'No encontramos esa obra.' : 'Un espacio para nuevas historias.';
-  $('emptyMessage').textContent = hasFilters ? 'Prueba otra búsqueda o cambia los filtros.' : activeProfile ? 'Este artista todavía no ha publicado pinturas.' : 'Las pinturas que se publiquen aparecerán aquí.';
+  $('emptyTitle').textContent = hasFilters ? 'No encontramos esa obra.' : favoritesActive ? 'Tus obras favoritas, en un lugar.' : 'Un espacio para nuevas historias.';
+  $('emptyMessage').textContent = hasFilters ? 'Prueba otra búsqueda o cambia los filtros.' : favoritesActive ? 'Dale corazón a una obra para guardarla aquí.' : activeProfile ? 'Este artista todavía no ha publicado pinturas.' : 'Las pinturas que se publiquen aparecerán aquí.';
   $('resetSearch').hidden = !hasFilters;
 }
 function openModal(dialog, opener) {
@@ -222,7 +346,7 @@ function openArtwork(work, opener) {
   for (const [label, value] of [['Artista de la obra', work.artist], ['Técnica', work.medium], ['Formato', work.dimensions], ['Marco', frameNames[work.frameStyle] || 'Sin marco'], ['Año', work.year]]) {
     const item = node('div'); item.append(node('dt', '', label), node('dd', '', value)); facts.append(item);
   }
-  details.append(facts);
+  details.append(likeControl(work), facts);
   if (work.imageDescription) {
     const visual = node('section', 'visual-description');
     visual.append(node('h3', '', 'Descripción de la imagen'), node('p', '', work.imageDescription));
@@ -235,6 +359,7 @@ function openArtwork(work, opener) {
     for (const label of work.labels) list.append(node('li', '', `${label.name} · ${Number(label.confidence).toFixed(1)} %`));
     analysis.append(list); details.append(analysis);
   }
+  details.append(commentsSection(work));
   if (canManage(work)) details.append(managementActions(work));
   $('artDialogContent').replaceChildren(woodFrame(work, false), details);
   openModal(artDialog, opener);
@@ -281,26 +406,111 @@ function renderRoute() {
   const requestedId = route.startsWith('artist/') ? route.slice(7) : null;
   const profile = profiles.find(entry => encodeURIComponent(entry.id) === requestedId);
   const directory = route === 'artists';
+  favoritesActive = route === 'favorites';
+  const activity = route === 'notifications';
+  const locked = (favoritesActive || activity) && !currentUser;
   activeProfile = profile?.id || null;
-  $('marketHero').hidden = Boolean(profile) || directory || Boolean(requestedId);
+  $('privateAccess').hidden = !locked;
+  $('marketHero').hidden = Boolean(profile) || directory || Boolean(requestedId) || favoritesActive || activity;
   $('profileHeader').hidden = !profile;
   $('artistDirectory').hidden = !directory;
-  $('feedSection').hidden = directory;
-  $('exploreLink').setAttribute('aria-current', !profile && !directory ? 'page' : 'false');
+  $('notificationsSection').hidden = !activity || locked;
+  $('feedSection').hidden = directory || activity || locked;
+  $('exploreLink').setAttribute('aria-current', !profile && !directory && !favoritesActive && !activity ? 'page' : 'false');
   $('artistsLink').setAttribute('aria-current', directory ? 'page' : 'false');
+  $('favoritesLink').setAttribute('aria-current', favoritesActive ? 'page' : 'false');
+  $('notificationsLink').setAttribute('aria-current', activity ? 'page' : 'false');
   if (profile) renderProfile(profile);
   if (directory) renderArtists();
-  $('feedTitle').textContent = profile ? 'Sus pinturas' : 'Descubre tu próxima obra';
-  $('feedEyebrow').textContent = profile ? 'UNA MIRADA, MUCHAS HISTORIAS' : 'LA GALERÍA, SIEMPRE ABIERTA';
-  document.title = profile ? `${profile.name} — Nogal` : directory ? 'Artistas — Nogal' : 'Nogal — Arte con un lugar';
+  if (activity && currentUser) renderNotifications();
+  $('feedTitle').textContent = favoritesActive ? 'Tus favoritos' : profile ? 'Sus pinturas' : 'Descubre tu próxima obra';
+  $('feedEyebrow').textContent = favoritesActive ? 'LAS OBRAS QUE TE INSPIRAN' : profile ? 'UNA MIRADA, MUCHAS HISTORIAS' : 'LA GALERÍA, SIEMPRE ABIERTA';
+  document.title = favoritesActive ? 'Favoritos — Nogal' : activity ? 'Notificaciones — Nogal' : profile ? profile.name + ' — Nogal' : directory ? 'Artistas — Nogal' : 'Nogal — Arte con un lugar';
   $('collectionError').textContent = requestedId && !profile ? 'Este perfil no está disponible. Explora las obras de la comunidad.' : '';
   $('collectionError').hidden = !requestedId || Boolean(profile);
   renderGallery();
 }
+function demoNotifications() {
+  return works.filter(work => work.userId === currentUser.id).flatMap(work => (work.comments || []).filter(comment => comment.userId !== currentUser.id).map(comment => ({
+    id: comment.id, workId: work.id, title: work.title, actorName: comment.authorName, text: comment.text.slice(0, 140), createdAt: comment.createdAt, read: Boolean(comment.notificationRead),
+  }))).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+function updateNotificationBadge() {
+  const count = notifications.filter(note => !note.read).length;
+  $('notificationBadge').textContent = String(count); $('notificationBadge').hidden = !count;
+  $('notificationsLink').setAttribute('aria-label', 'Notificaciones: ' + count + ' sin leer');
+}
+function renderNotifications() {
+  updateNotificationBadge();
+  const list = $('notificationsList');
+  if (!notifications.length) {
+    list.replaceChildren(node('div', 'notification-empty', 'Aquí verás los comentarios que otras personas hagan en tus cuadros.'));
+    return;
+  }
+  list.replaceChildren(...notifications.map(note => {
+    const button = node('button', 'notification-card' + (note.read ? '' : ' unread'));
+    button.type = 'button';
+    button.append(node('span', 'notification-state', note.read ? 'Leída' : 'Nueva'), node('strong', '', note.actorName + ' comentó en «' + note.title + '»'), node('span', 'notification-excerpt', note.text));
+    const date = node('time', '', new Date(note.createdAt).toLocaleString('es-GT')); date.dateTime = note.createdAt; button.append(date);
+    button.addEventListener('click', async () => {
+      button.disabled = true; $('notificationsStatus').textContent = '';
+      try {
+        if (!isDemo) {
+          await nogalApi.request('/api/notifications/' + note.workId + '/' + note.id + '/read', { method: 'PUT' });
+          const collection = await nogalApi.request('/api/artworks');
+          for (const work of collection.works) {
+            const previous = works.find(entry => entry.id === work.id);
+            if (previous) Object.assign(previous, work); else works.push(work);
+          }
+        } else {
+          const comment = works.find(work => work.id === note.workId)?.comments?.find(comment => comment.id === note.id);
+          if (comment) comment.notificationRead = true;
+        }
+        note.read = true; updateNotificationBadge();
+        button.classList.remove('unread'); button.querySelector('.notification-state').textContent = 'Leída';
+        const work = works.find(work => work.id === note.workId);
+        if (!work) throw new Error('Esta obra ya no está disponible.');
+        openArtwork(work, button); artDialog.querySelector('.comments-section').scrollIntoView({ block: 'nearest' });
+      } catch (error) { $('notificationsStatus').textContent = error.message; }
+      finally { button.disabled = false; }
+    });
+    return button;
+  }));
+}
+async function refreshNotifications() {
+  if (!currentUser || notificationsLoading) return;
+  notificationsLoading = true; $('refreshNotifications').disabled = true;
+  try {
+    notifications = isDemo ? demoNotifications() : (await nogalApi.request('/api/notifications')).notifications;
+    $('notificationsStatus').textContent = '';
+    updateNotificationBadge();
+    if (location.hash === '#notifications') renderNotifications();
+  } catch (error) { $('notificationsStatus').textContent = error.message; }
+  finally { notificationsLoading = false; $('refreshNotifications').disabled = false; }
+}
+async function refreshFavorites() {
+  if (!currentUser || isDemo) return;
+  try {
+    const collection = await nogalApi.request('/api/favorites');
+    const ids = new Set(collection.works.map(work => work.id));
+    for (const work of works) if (!pendingLikes.has(work.id)) work.liked = ids.has(work.id);
+    for (const work of collection.works) {
+      const previous = works.find(entry => entry.id === work.id);
+      if (previous && !pendingLikes.has(work.id)) Object.assign(previous, work); else if (!previous) works.push(work);
+    }
+    if (favoritesActive) renderGallery();
+  } catch (error) { $('collectionError').textContent = error.message; $('collectionError').hidden = false; }
+}
+$('refreshNotifications').addEventListener('click', () => { void refreshNotifications(); });
+window.addEventListener('focus', () => { void refreshNotifications(); });
+document.addEventListener('visibilitychange', () => { if (!document.hidden) void refreshNotifications(); });
+setInterval(() => { if (!document.hidden) void refreshNotifications(); }, 30000);
 window.addEventListener('hashchange', () => {
   for (const dialog of [artDialog, addDialog, profileDialog]) if (dialog.open && !dialogBusy(dialog)) dialog.close();
   searchInput.value = ''; activeCategory = 'Todas'; $('availabilityFilter').value = 'all';
   renderCategories(); renderRoute(); window.scrollTo(0, 0);
+  if (favoritesActive) void refreshFavorites();
+  if (location.hash === '#notifications') void refreshNotifications();
 });
 function updateFramePreview() {
   const settings = frameSettings();
@@ -456,6 +666,7 @@ $('profileForm').addEventListener('submit', async event => {
 function updateSessionControls() {
   $('loginLink').hidden = Boolean(currentUser);
   $('logoutButton').hidden = !currentUser;
+  $('favoritesLink').hidden = !currentUser; $('notificationsLink').hidden = !currentUser;
   const link = $('myProfileLink'); link.hidden = !currentUser;
   if (currentUser) { link.href = `#artist/${encodeURIComponent(currentUser.id)}`; link.replaceChildren(avatar(currentUser)); }
 }
@@ -487,7 +698,7 @@ async function initializeGalleryPage() {
     }
     loading = false; galleryScene.hidden = false; updateSessionControls(); renderCategories();
     if (!isCommunity && !isDemo && !location.hash) location.hash = `artist/${encodeURIComponent(currentUser.id)}`;
-    renderRoute();
+    renderRoute(); void refreshNotifications();
   } catch (error) {
     loading = false; works.length = 0; galleryScene.hidden = false; renderCategories(); renderGallery(); updateSessionControls();
     $('collectionError').textContent = `No se pudo cargar la galería. ${error.message}`;

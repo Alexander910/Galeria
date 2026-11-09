@@ -1,0 +1,62 @@
+ADMINISTRACIÓN DE USUARIOS DE NOGAL EN AZURE
+
+Las cuentas de la galería se guardan en Azure Table Storage, tabla users. Ya no hay
+un límite de tres cuentas ni una lista de nombres autorizados en la aplicación.
+Astid, Zulema y Elvia se conservan; el cambio no modifica sus claves ni perfiles.
+
+ESTADO ACTUAL
+La infraestructura está eliminada por solicitud del responsable. Este cambio está
+preparado en el código; no se han creado recursos con costo ni cuentas nuevas.
+Para usar el alta en Azure, primero debe desplegarse esta versión en ambas apps.
+
+ALTA DESDE AZURE PORTAL
+1. En PowerShell, entrar a la carpeta del proyecto y ejecutar:
+   & ./infra/vm/New-NogalUser.ps1 -Username nuevoartista -DisplayName 'Nuevo Artista'
+2. El programa pide una contraseña oculta de 12 a 256 caracteres. No escribirla
+   como texto en el código, en argumentos de consola o en el portal de Azure.
+3. Se genera un script privado en data/deploy/new-user-....sh. Contiene un salt y
+   un hash scrypt, sin contraseña en texto. Tratar ese archivo como confidencial.
+4. Azure Portal > nogal-app-1 > Operaciones > Ejecutar comando > RunShellScript.
+   Pegar el script generado y ejecutarlo. Debe mostrar NOGAL_USER_CREATED y el ID.
+   El contenedor utiliza su identidad administrada para escribir en la tabla privada.
+5. Eliminar el script privado local después de usarlo. Iniciar sesión en la galería
+   con la cuenta nueva. No se reinician las apps ni se modifica Key Vault por cada alta.
+
+ALTA DESDE AZURE CLI
+Con sesión de Azure CLI autenticada, se puede hacer la misma operación directamente:
+   & ./infra/vm/New-NogalUser.ps1 -Username nuevoartista -DisplayName 'Nuevo Artista' -Apply
+Esta opción llama a Azure Run Command y retira el script local al terminar.
+Se requiere permiso para ejecutar comandos en la VM. No es un registro público:
+solo un administrador autorizado de Azure puede ejecutar esta operación.
+
+DATOS EN TABLE STORAGE
+PartitionKey = user
+RowKey = nombre de usuario normalizado en minúsculas para cuentas nuevas.
+Las cuentas anteriores pueden conservar un UUID como RowKey e id del documento;
+no cambiarlo, porque identifica al propietario de obras y comentarios.
+payload = documento JSON de perfil, salt y hash scrypt
+Usar el helper para producir esos valores correctamente. La base permanece privada;
+no habilitar acceso público ni claves compartidas para administrar usuarios.
+Si el nombre ya existe, se rechaza la creación y se conserva el perfil y la clave.
+Las contraseñas de las tres cuentas anteriores se mantienen aunque sean más cortas
+que el mínimo establecido para las nuevas altas.
+
+ARRANQUE Y REPLICACIÓN
+bootstrap-users en Key Vault es una semilla inicial, no una lista de acceso permitida.
+Solo inserta cuentas que falten. Las cuentas ya existentes se mantienen intactas.
+Las dos apps consultan la tabla compartida al iniciar sesión y cargar perfiles.
+Una cuenta nueva queda disponible en ambas sin un redespliegue por usuario.
+
+RESPALDOS
+El respaldo de nogal-ops exporta todos los usuarios de Tables, sus perfiles y las
+imágenes, sin limitar el número de cuentas. restore.cjs y prepare-local-restore.py
+admiten también respaldos con más de tres usuarios.
+El respaldo local por API solo puede usar los hashes que ya existen localmente.
+Si detecta cuentas nuevas de Azure sin esos hashes, se detiene para evitar producir
+una copia incompleta. En ese caso usar el respaldo privado completo de nogal-ops y
+descargar su tar.gz con una identidad autorizada para leer el contenedor backups.
+No publicar hashes, archivos de respaldo ni scripts de alta en evidencias académicas.
+
+REFERENCIAS
+https://learn.microsoft.com/en-us/azure/virtual-machines/linux/run-command
+https://learn.microsoft.com/en-us/javascript/api/@azure/data-tables/tableclient

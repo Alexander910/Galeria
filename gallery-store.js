@@ -127,4 +127,51 @@ async function deleteProfilePhoto(url) {
   if (azure.enabled) await azure.deleteImage(filename);
   else await fs.unlink(path.join(directory, filename)).catch(error => { if (error.code !== 'ENOENT') throw error; });
 }
-module.exports = { list, create: (input, user) => save(input, user), update: (id, input, user) => save(input, user, id), remove, image, saveProfilePhoto, deleteProfilePhoto };
+async function changeArtwork(id, change) {
+  const operation = queue.then(async () => {
+    if (azure.enabled) return azure.updateArtwork(id, change);
+    const works = await list();
+    const work = works.find(entry => entry.id === id);
+    if (!work) throw Object.assign(new Error('La imagen ya no está disponible.'), { status: 404 });
+    const updated = change(work);
+    await fs.writeFile(`${catalog}.tmp`, JSON.stringify(works.map(entry => entry.id === id ? updated : entry), null, 2));
+    await fs.rename(`${catalog}.tmp`, catalog);
+    return updated;
+  });
+  queue = operation.catch(() => {});
+  return operation;
+}
+function setLike(id, userId, liked) {
+  return changeArtwork(id, work => {
+    const likedBy = new Set(work.likedBy || []);
+    if (liked) likedBy.add(userId); else likedBy.delete(userId);
+    return { ...work, likedBy: [...likedBy] };
+  });
+}
+function addComment(id, user, text) {
+  if (typeof text !== 'string' || !text.trim() || text.trim().length > 500) throw Object.assign(new Error('Escribe un comentario de 1 a 500 caracteres.'), { status: 400 });
+  const comment = { id: randomUUID(), userId: user.id, authorName: user.name, text: text.trim(), createdAt: new Date().toISOString() };
+  return changeArtwork(id, work => {
+    const comments = work.comments || [];
+    if (comments.length >= 30) throw Object.assign(new Error('Esta obra alcanzó el límite de 30 comentarios.'), { status: 400 });
+    return { ...work, comments: [...comments, comment] };
+  });
+}
+function deleteComment(id, commentId, user) {
+  return changeArtwork(id, work => {
+    const comments = work.comments || [];
+    const comment = comments.find(entry => entry.id === commentId);
+    if (!comment) throw Object.assign(new Error('El comentario ya no está disponible.'), { status: 404 });
+    if (comment.userId !== user.id && work.userId !== user.id) throw Object.assign(new Error('Solo puedes borrar tus comentarios o moderar tus propias obras.'), { status: 403 });
+    return { ...work, comments: comments.filter(entry => entry.id !== commentId) };
+  });
+}
+function readNotification(id, commentId, user) {
+  return changeArtwork(id, work => {
+    if (work.userId !== user.id) throw Object.assign(new Error('Esta notificación no te pertenece.'), { status: 403 });
+    const comment = (work.comments || []).find(entry => entry.id === commentId && entry.userId !== user.id);
+    if (!comment) throw Object.assign(new Error('La notificación ya no está disponible.'), { status: 404 });
+    return { ...work, comments: work.comments.map(entry => entry.id === commentId ? { ...entry, notificationRead: true } : entry) };
+  });
+}
+module.exports = { list, create: (input, user) => save(input, user), update: (id, input, user) => save(input, user, id), remove, image, saveProfilePhoto, deleteProfilePhoto, setLike, addComment, deleteComment, readNotification };

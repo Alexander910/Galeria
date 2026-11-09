@@ -5,6 +5,7 @@ const { randomBytes, scryptSync, timingSafeEqual } = require('node:crypto');
 
 const gallery = require('./gallery-store');
 const azure = require('./azure-store');
+const {validateUsers}=require('./user-accounts');
 const production = process.env.NODE_ENV === 'production';
 const publicOrigin = process.env.PUBLIC_ORIGIN;
 const publicOrigins = [publicOrigin, ...(process.env.EXTRA_PUBLIC_ORIGINS || '').split(',')].filter(Boolean);
@@ -24,7 +25,7 @@ async function initializeUsers() {
   await fs.mkdir(path.dirname(usersFile), { recursive: true });
   try {
     users = JSON.parse(await fs.readFile(usersFile, 'utf8')).users;
-    if (!Array.isArray(users)) throw new Error('Formato de usuarios inválido.');
+    users=validateUsers(users);
   } catch (error) {
     if (error.code !== 'ENOENT') throw error;
     throw new Error('No hay usuarios configurados. Proporciona data/users.json con las cuentas autorizadas.');
@@ -39,6 +40,13 @@ function publicUser(user) {
   return { id: user.id, name: user.name, username: user.username,
     bio: user.bio || '', location: user.location || '', specialty: user.specialty || '',
     photoUrl: user.photoUrl || '', contactEmail: user.contactEmail || '', contactPhone: user.contactPhone || '', website: user.website || '' };
+}
+function publicComments(comments = []) {
+  return comments.map(({ notificationRead, ...comment }) => comment);
+}
+function publicArtwork(work, user) {
+  const { likedBy = [], ...fields } = work;
+  return { ...fields, comments: publicComments(work.comments), likeCount: new Set(likedBy).size, liked: Boolean(user && likedBy.includes(user.id)) };
 }
 async function updateProfile(userId, input) {
   const operation = profileQueue.then(async () => {
@@ -125,7 +133,36 @@ async function handle(request, response) {
     return response.end();
   }
   if (url.pathname === '/api/artworks' && request.method === 'GET') {
-    return json(response, 200, { works: await gallery.list() });
+    const user = await sessionUser(request);
+    return json(response, 200, { works: (await gallery.list()).map(work => publicArtwork(work, user)) });
+  }
+  if (url.pathname === '/api/favorites' && request.method === 'GET') {
+    const user = await sessionUser(request);
+    if (!user) return json(response, 401, { error: 'Inicia sesión para ver tus favoritos.' });
+    return json(response, 200, { works: (await gallery.list()).filter(work => (work.likedBy || []).includes(user.id)).map(work => publicArtwork(work, user)) });
+  }
+  if (url.pathname === '/api/notifications' && request.method === 'GET') {
+    const user = await sessionUser(request);
+    if (!user) return json(response, 401, { error: 'Inicia sesión para ver tus notificaciones.' });
+    const notifications = (await gallery.list()).filter(work => work.userId === user.id).flatMap(work =>
+      (work.comments || []).filter(comment => comment.userId !== user.id).map(comment => ({
+        id: comment.id, workId: work.id, title: work.title, actorName: comment.authorName,
+        text: comment.text.slice(0, 140), createdAt: comment.createdAt, read: Boolean(comment.notificationRead),
+      })));
+    notifications.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    return json(response, 200, { notifications, unreadCount: notifications.filter(note => !note.read).length });
+  }
+  const notificationRoute = url.pathname.match(/^\/api\/notifications\/([a-f0-9-]{36})\/([a-f0-9-]{36})\/read$/);
+  if (notificationRoute && request.method === 'PUT') {
+    if (!trustedOrigin) return json(response, 403, { error: 'Origen no permitido.' });
+    const user = await sessionUser(request);
+    if (!user) return json(response, 401, { error: 'Inicia sesión para ver tus notificaciones.' });
+    try {
+      await gallery.readNotification(notificationRoute[1], notificationRoute[2], user);
+      return json(response, 200, { ok: true });
+    } catch (error) {
+      return json(response, error.status || 500, { error: error.status ? error.message : 'No se pudo marcar la notificación como leída.' });
+    }
   }
   if (url.pathname === '/api/profiles' && request.method === 'GET') {
     return json(response, 200, { profiles: (azure.enabled ? await azure.listUsers() : users).map(publicUser) });
@@ -149,8 +186,39 @@ async function handle(request, response) {
     let input;
     try { input = await readJson(request, 35 * 1024 * 1024); }
     catch { return json(response, 400, { error: 'Solicitud inválida o imagen demasiado grande.' }); }
-    try { return json(response, 201, { work: await gallery.create(input || {}, user) }); }
+    try { return json(response, 201, { work: publicArtwork(await gallery.create(input || {}, user), user) }); }
     catch (error) { return json(response, 400, { error: error.code ? 'No se pudo guardar la imagen. Inténtalo de nuevo.' : error.message }); }
+  }
+  const commentRoute = url.pathname.match(/^\/api\/artworks\/([a-f0-9-]{36})\/comments(?:\/([a-f0-9-]{36}))?$/);
+  if (commentRoute && ((request.method === 'POST' && !commentRoute[2]) || (request.method === 'DELETE' && commentRoute[2]))) {
+    if (!trustedOrigin) return json(response, 403, { error: 'Origen no permitido.' });
+    const user = await sessionUser(request);
+    if (!user) return json(response, 401, { error: 'Inicia sesión para comentar.' });
+    let input;
+    if (request.method === 'POST') {
+      if (!request.headers['content-type']?.startsWith('application/json')) return json(response, 415, { error: 'Formato no admitido.' });
+      try { input = await readJson(request); } catch { return json(response, 400, { error: 'Comentario inválido.' }); }
+    }
+    try {
+      const work = request.method === 'POST' ? await gallery.addComment(commentRoute[1], user, input?.text)
+        : await gallery.deleteComment(commentRoute[1], commentRoute[2], user);
+      return json(response, request.method === 'POST' ? 201 : 200, { comments: publicComments(work.comments) });
+    } catch (error) {
+      return json(response, error.status || 500, { error: error.status ? error.message : 'No se pudo guardar el comentario. Inténtalo de nuevo.' });
+    }
+  }
+  const likeRoute = url.pathname.match(/^\/api\/artworks\/([a-f0-9-]{36})\/like$/);
+  if (likeRoute && ['PUT', 'DELETE'].includes(request.method)) {
+    if (!trustedOrigin) return json(response, 403, { error: 'Origen no permitido.' });
+    const user = await sessionUser(request);
+    if (!user) return json(response, 401, { error: 'Inicia sesión para dar corazones.' });
+    try {
+      const work = await gallery.setLike(likeRoute[1], user.id, request.method === 'PUT');
+      const { likeCount, liked } = publicArtwork(work, user);
+      return json(response, 200, { likeCount, liked });
+    } catch (error) {
+      return json(response, error.status || 500, { error: error.status ? error.message : 'No se pudo guardar tu corazón. Inténtalo de nuevo.' });
+    }
   }
   const artworkRoute = url.pathname.match(/^\/api\/artworks\/([a-f0-9-]{36})$/);
   if (artworkRoute && ['PUT', 'DELETE'].includes(request.method)) {
@@ -168,7 +236,7 @@ async function handle(request, response) {
         await gallery.remove(artworkRoute[1], user);
         return json(response, 200, { ok: true });
       }
-      return json(response, 200, { work: await gallery.update(artworkRoute[1], input, user) });
+      return json(response, 200, { work: publicArtwork(await gallery.update(artworkRoute[1], input, user), user) });
     } catch (error) {
       return json(response, error.status || (error.code ? 500 : 400), { error: error.code ? 'No se pudo guardar el cambio. Inténtalo de nuevo.' : error.message });
     }
@@ -206,7 +274,7 @@ async function handle(request, response) {
     try { input = await readJson(request); } catch { return json(response, 400, { error: 'Solicitud inválida.' }); }
     if (!input || typeof input.username !== 'string' || typeof input.password !== 'string' || input.password.length > 256) return json(response, 400, { error: 'Revisa el usuario y la contraseña.' });
     const accounts = azure.enabled ? await azure.listUsers() : users;
-    const user = accounts.find(entry => entry.username.toLowerCase() === input.username.trim().toLowerCase());
+    const user = accounts.find(entry => entry.username.normalize('NFKC').toLowerCase() === input.username.trim().normalize('NFKC').toLowerCase());
     const derived = scryptSync(input.password, user?.passwordSalt || 'unknown-user-salt', 64);
     const expected = user ? Buffer.from(user.passwordHash, 'hex') : Buffer.alloc(64);
     if (!user || expected.length !== derived.length || !timingSafeEqual(derived, expected)) return json(response, 401, { error: 'El usuario o la contraseña no son correctos.' });

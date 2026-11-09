@@ -5,12 +5,14 @@ const path=require('node:path');
 const {DefaultAzureCredential}=require('@azure/identity');
 const {TableClient}=require('@azure/data-tables');
 const {BlobServiceClient}=require('@azure/storage-blob');
+const {validateUsers}=require(require('node:fs').existsSync(path.join(__dirname,'user-accounts.js'))?'./user-accounts':'../../user-accounts');
 async function main(){
   const directory=path.resolve(process.argv[2]||'/restore');
   const apply=process.argv.includes('--apply');
   const data=JSON.parse(await fs.readFile(path.join(directory,'tables.json'),'utf8'));
-  if(data.users?.length!==3||!Array.isArray(data.artworks)||data.users.map(u=>u.username).sort().join(',')!=='Astid,Elvia,Zulema')throw new Error('Respaldo de usuarios no válido.');
-  for(const user of data.users)if(!/^[a-f0-9]{128}$/.test(user.passwordHash)||!user.passwordSalt||user.kind!=='user'||user.id!==user.username.toLowerCase())throw new Error('Entidad de usuario no válida.');
+  if(!Array.isArray(data.artworks))throw new Error('Respaldo de obras no válido.');
+  data.users=validateUsers(data.users);
+  if(!data.users.length)throw new Error('El respaldo no contiene usuarios.');
   const files=[];
   for(const work of data.artworks){
     if(work.kind!=='artwork'||!/^[a-f0-9-]{36}$/.test(work.id)||!Array.isArray(work.labels))throw new Error('Metadatos no válidos.');
@@ -18,6 +20,15 @@ async function main(){
     if(!/^[a-f0-9-]{36}\.(png|jpeg|webp)$/.test(name))throw new Error('Archivo no válido.');
     const file=path.join(directory,'images',name),stat=await fs.stat(file);
     if(stat.size!==work.byteSize)throw new Error('Tamaño de imagen inconsistente.');
+    files.push({file,name});
+  }
+  for(const user of data.users){
+    if(!user.photoUrl)continue;
+    if(!/^\/media\/[a-f0-9-]{36}\.(png|jpeg|webp)$/.test(user.photoUrl))throw new Error('Foto de perfil no válida.');
+    const name=user.photoUrl.split('/').pop();
+    if(files.some(f=>f.name===name))continue;
+    const file=path.join(directory,'images',name),stat=await fs.stat(file);
+    if(!stat.isFile()||stat.size===0||stat.size>2*1024*1024)throw new Error('Tamaño de foto de perfil no válido.');
     files.push({file,name});
   }
   console.log(JSON.stringify({mode:apply?'apply':'dry-run',users:data.users.length,artworks:data.artworks.length,images:files.length}));

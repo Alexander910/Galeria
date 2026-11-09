@@ -9,6 +9,7 @@ param availabilitySetId string = ''
 param size string = 'Standard_B1s'
 param sshPublicKey string
 @secure()
+@maxLength(131000)
 param initScript string
 
 resource nic 'Microsoft.Network/networkInterfaces@2024-05-01' = {
