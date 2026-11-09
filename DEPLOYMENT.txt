@@ -1,3 +1,29 @@
+ESTADO ACTUAL: NOGAL REACTIVADO Y VERIFICADO EN AZURE
+Verificado (Guatemala): 2026-11-09 15:56:48 -06:00
+Código desplegado: 1f46d08. Despliegue nogal-release-1f46d08, Succeeded.
+Principal: https://nogal-uietolmehuftu-1.northcentralus.cloudapp.azure.com
+Alternativo: https://nogal-uietolmehuftu-2.belgiumcentral.cloudapp.azure.com
+Cinco servidores activos: nogal-proxy-1, nogal-proxy-2, nogal-app-1, nogal-app-2 y nogal-ops.
+Tres cuentas y cinco obras restauradas; integridad de las cinco imágenes verificada por SHA-256.
+Se conservaron contraseñas, identificadores, propietarios, fechas y etiquetas del respaldo local.
+Pruebas reales con dos cuentas temporales: login, sesiones entre accesos, carga y análisis,
+foto y contacto, permisos, corazones, comentarios, favoritos y notificaciones privadas.
+Las cuentas y los datos temporales se eliminaron al terminar. Vision devolvió 14 etiquetas.
+Continuidad: 146 solicitudes, 0 fallos, durante una parada real de app1.
+app1 detenida desde 2026-11-09T21:51:51Z hasta 2026-11-09T21:52:11Z (UTC).
+Se registraron 32 consultas durante la parada de 20 segundos.
+Ambas réplicas volvieron a atender después. No se probó una caída regional completa.
+Tables privada: publicNetworkAccess=Disabled, Shared Key=false, TLS mínimo 1.2.
+Respaldo privado nuevo: 2026-11-09T21-34-19-064Z.tar.gz; tres cuentas, cinco obras y cinco imágenes.
+Se descargó y validó en dry-run; la restauración inicial sí se aplicó desde el respaldo local.
+Respaldo diario habilitado a las 06:30 UTC (00:30 Guatemala).
+Evidencia final sin credenciales: output/verification/azure-release-20261109.json.
+Las evidencias detalladas y parámetros privados están en data/deploy, fuera de Git.
+Presupuesto autorizado USD 50. Los recursos activos generan consumo; el presupuesto no corta servicios.
+Pendiente académico: actualizar informe y presentación y ensayar con todos los integrantes.
+
+HISTORIAL ANTERIOR A ESTA REACTIVACIÓN
+------------------------------------
 VERSIÓN LOCAL VERIFICADA PARA EL SIGUIENTE DESPLIEGUE
 La autorización del docente para usar Azure fue confirmada por el responsable en este chat.
 El entorno de Azure continúa sin reactivarse; estas comprobaciones son locales.
@@ -42,6 +68,8 @@ en Azure. Al reactivar el proyecto, desplegar esta versión en ambas aplicacione
 
 La información siguiente es historial de la infraestructura antes de este cierre.
 Verificación de cierre (Guatemala): 2026-11-07 20:26:48 -06:00
+
+
 
 ESTADO ACTUAL: NOGAL REACTIVADO EN AZURE
 Verificado el 7 de noviembre de 2026, horario de Guatemala.
@@ -99,6 +127,7 @@ provisional y sujeto a actualización; no representa saldo de crédito restante.
 El presupuesto nogal-50-usd no detiene el consumo. NAT, IPs, discos y datos siguen
 cobrando incluso con VMs desasignadas. La infraestructura queda activa por solicitud
 del responsable; no se programó eliminación automática.
+
 
 ACTUALIZACIÓN DE FOTO DE PERFIL — 7 DE NOVIEMBRE DE 2026
 Release profile-20261107232324 instalada de forma secuencial en nogal-app-1 y

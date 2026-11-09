@@ -5,9 +5,10 @@ un límite de tres cuentas ni una lista de nombres autorizados en la aplicación
 Astid, Zulema y Elvia se conservan; el cambio no modifica sus claves ni perfiles.
 
 ESTADO ACTUAL
-La infraestructura está eliminada por solicitud del responsable. Este cambio está
-preparado en el código; no se han creado recursos con costo ni cuentas nuevas.
-Para usar el alta en Azure, primero debe desplegarse esta versión en ambas apps.
+La versión 1f46d08 está desplegada en ambas aplicaciones desde el 9 de noviembre
+de 2026. La galería y la tabla privada están activas; las tres cuentas restauradas
+conservan su acceso. El alta administrativa ya puede utilizarse desde la VM.
+Las dos cuentas temporales de verificación se eliminaron al terminar las pruebas.
 
 ALTA DESDE AZURE PORTAL
 1. En PowerShell, entrar a la carpeta del proyecto y ejecutar:
