@@ -65,3 +65,10 @@ dialog{background:var(--surface);color:var(--ink);border:1px solid var(--line);b
 .notification-card.unread{border-left:4px solid var(--accent);background:var(--surface-raised)}.notification-card:hover{border-color:var(--accent)}.notification-card strong{font-size:14px;font-weight:500;overflow-wrap:anywhere}.notification-state{font-size:9px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted)}
 .notification-excerpt{font-size:12px;line-height:1.8;overflow-wrap:anywhere}.notification-card time{font-size:10px;color:var(--muted)}.notification-empty{padding:45px 20px;color:var(--muted);font-size:13px;line-height:1.8;border:1px dashed var(--line);border-radius:12px}.private-access{padding:60px 0 90px}.private-access h1{font:400 45px var(--serif)}.private-access p{color:var(--muted);font-size:13px;margin-bottom:24px}
 @media(max-width:780px){.main-nav{gap:12px;justify-content:space-between}.main-nav a{font-size:11px}.notification-badge{font-size:8px;min-width:16px;height:16px;margin-left:3px}.notification-card{padding:20px}}
+
+/* Selector de idioma: español, inglés y Q'eqchi'. */
+.lang-switch{display:inline-flex;align-items:center;gap:2px;border:1px solid var(--line);border-radius:7px;padding:2px}
+.lang-option{border:0;background:none;color:var(--muted);font-size:10px;letter-spacing:.6px;padding:7px 8px;border-radius:5px;min-width:32px}
+.lang-option:hover{color:var(--ink)}
+.lang-option[aria-pressed=true]{background:var(--surface-raised);color:var(--ink)}
+@media(max-width:520px){.session-actions .lang-switch{padding:1px}.session-actions .lang-option{padding:6px 4px;min-width:26px;font-size:9px}}

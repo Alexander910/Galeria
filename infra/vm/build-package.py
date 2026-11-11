@@ -2,7 +2,7 @@ from pathlib import Path
 import tarfile, base64, json, gzip, lzma
 root=Path.cwd()
 output=root/'data'/'deploy'; output.mkdir(parents=True,exist_ok=True)
-files=['server.js','gallery-store.js','azure-store.js','user-accounts.js','index.html','usuarios.html','login.html','api.js','usuarios.js','login.js','theme.js','style.css','gallery.css','Dockerfile','package.json','package-lock.json','infra/vm/backup.cjs','infra/vm/manage-users.cjs']
+files=['server.js','gallery-store.js','azure-store.js','user-accounts.js','index.html','usuarios.html','login.html','api.js','usuarios.js','login.js','theme.js','i18n.js','style.css','gallery.css','Dockerfile','package.json','package-lock.json','infra/vm/backup.cjs','infra/vm/manage-users.cjs']
 with tarfile.open(output/'nogal-source.tar.gz','w:gz') as archive:
  for name in files:
   archive.add(root/name,arcname=name)

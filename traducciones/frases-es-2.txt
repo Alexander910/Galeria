@@ -1,0 +1,136 @@
+Óleo sobre lienzo
+Elige tu marco
+Explora los diseños de inspiración maya y los marcos clásicos. Mira cómo cambia tu pintura.
+Maya · Espiral cuadrada
+Maya · Celosía diagonal
+Maya · Sol geométrico
+Maya · Greca escalonada
+Maya · Tejido de rombos
+Maya · Relieve de piedra
+Nogal clásico
+Roble natural
+Caoba
+Madera rústica
+Negro mate
+Blanco mate
+Dorado clásico
+Plateado
+Bronce
+Caja flotante
+Lienzo sobre bastidor
+Sin marco
+Paspartú (borde interior)
+Crema cálido
+Blanco
+Negro
+Sin paspartú
+Tamaño del cuadro
+20 × 20 cm · cuadrado
+30 × 30 cm · cuadrado
+40 × 40 cm · cuadrado
+50 × 50 cm · cuadrado
+60 × 60 cm · cuadrado
+80 × 80 cm · cuadrado
+Categoría
+Orientación
+Vertical
+Horizontal
+Cómo colocar la imagen
+Imagen completa · sin recortar
+Llenar el cuadro · recortar bordes
+Descripción de la pintura
+Cuenta su historia, los materiales y los detalles de la pintura…
+Descripción visual de la imagen
+Ej. Montañas verdes bajo un cielo naranja, pintadas con pinceladas suaves.
+Ayuda a entender la imagen y se usa como texto alternativo.
+Precio (opcional)
+Sin precio publicado
+Moneda
+GTQ · Quetzales
+USD · Dólares
+EUR · Euros
+Publicar en la galería
+Tu pintura y su descripción serán públicas en tu perfil y en Explorar.
+Vista previa del cuadro
+ASÍ QUEDARÁ EN TU PARED
+Adjunta una imagen para probarla.
+Proporción del formato elegido; escala de pantalla ilustrativa. Algunos formatos, como HEIC, TIFF o RAW, necesitan convertirse a JPG o PNG si tu navegador no los abre.
+Vista previa
+Preparando imagen…
+Se conservará la imagen actual.
+Adjunta una imagen para previsualizarla.
+Selecciona una imagen de hasta 19 MB.
+Usa JPG, PNG o WebP.
+No se pudo abrir la imagen. Usa JPG, PNG o WebP.
+No se pudo previsualizar el archivo.
+Editar pintura
+Comparte tu próxima obra.
+Actualiza la descripción, el precio o la imagen de tu pintura.
+Dale un lugar a tu pintura en la comunidad.
+Guardar cambios
+Publicar pintura
+Imagen actual. Adjunta otra si quieres reemplazarla.
+Adjunta una imagen válida.
+No se pudo leer la imagen.
+Cerrar perfil
+TU ESPACIO CREATIVO
+Cuéntale a la comunidad quién está detrás de tus pinturas.
+Foto de perfil
+JPG, PNG o WebP. Máximo 2 MB.
+Quitar foto
+Nombre público
+Especialidad
+Ej. Pintura al óleo y paisajes
+Ubicación
+Ej. Ciudad de Guatemala
+Biografía
+Tu inspiración, tu proceso, tu historia…
+Contacto público (opcional)
+Completa solo los datos que quieras mostrar a los visitantes de tu perfil.
+Correo de contacto
+Teléfono de contacto
+Sitio web o red social
+Tu foto y estos datos serán visibles en tu perfil público.
+Guardar perfil
+Selecciona una foto JPG, PNG o WebP de hasta 2 MB.
+No se pudo leer la foto.
+No se pudo cargar la galería. {error}
+Vista de demostración. Los perfiles, pinturas y precios son de muestra; los cambios se perderán al recargar.
+Nogal — Entra a tu galería
+Hay lugares
+que se
+iluminan
+contigo.
+Encender lámpara y mostrar el acceso
+Apagar lámpara y ocultar el acceso
+Acceso a la galería
+Todo empieza
+con un poco de luz.
+ENCIENDE LA LÁMPARA PARA ENTRAR
+BIENVENIDO A TU GALERÍA
+Qué bueno verte.
+Un espacio para volver a lo que te inspira.
+Usuario
+Tu nombre de usuario
+Contraseña
+Tu contraseña
+Mostrar contraseña
+Ocultar contraseña
+Entrar a mi galería
+Explorar galería de la comunidad
+Tu mirada merece un lugar propio.
+Lámpara apagada.
+Lámpara encendida. El formulario de acceso está disponible.
+No se pudo iniciar sesión: {error}
+La respuesta del servidor no es válida.
+El usuario o la contraseña no son correctos.
+Demasiados intentos. Espera un minuto.
+Revisa el usuario y la contraseña.
+Revisa los datos de la obra.
+Revisa los datos del perfil.
+Escribe un comentario de 1 a 500 caracteres.
+Solo puedes modificar tus propias imágenes.
+La imagen ya no está disponible.
+La imagen debe pesar como máximo 19 MB.
+El contenido del archivo no coincide con su formato.
+No se pudo analizar la imagen. Comprueba el formato o inténtalo más tarde.

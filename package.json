@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node server.js",
     "test": "node --test tests/*.test.cjs",
-    "check": "node --check server.js && node --check gallery-store.js && node --check azure-store.js && node --check usuarios.js && node --check theme.js"
+    "check": "node --check server.js && node --check gallery-store.js && node --check azure-store.js && node --check theme.js && node --check i18n.js"
   },
   "engines": {
     "node": ">=22"

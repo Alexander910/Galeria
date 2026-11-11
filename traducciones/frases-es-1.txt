@@ -1,0 +1,137 @@
+ARTE ORIGINAL
+Nogal, inicio
+Navegación principal
+Explorar
+Artistas
+Favoritos
+Notificaciones
+＋ Publicar obra
+Mi perfil
+Entrar
+Salir
+Idioma
+Activar modo oscuro
+Activar modo claro
+Cambiar tema
+UN ENCUENTRO ENTRE ARTE Y PERSONAS
+Arte que encuentra
+su lugar.
+Pinturas con historia. Artistas con una mirada propia.
+Descubre esa obra que habla contigo.
+Una pared vacía.
+Infinitas posibilidades.
+DIRECTO DE SUS ARTISTAS
+Perfil del artista
+CONOCE SUS MIRADAS
+Nuestros artistas
+Cada perfil, un universo propio.
+Tu espacio personal.
+Inicia sesión para ver tus favoritos y notificaciones.
+Iniciar sesión
+ACTIVIDAD EN TUS CUADROS
+Actualizar
+LA GALERÍA, SIEMPRE ABIERTA
+Descubre tu próxima obra
+LAS OBRAS QUE TE INSPIRAN
+Tus favoritos
+UNA MIRADA, MUCHAS HISTORIAS
+Sus pinturas
+Filtros de pinturas
+Categorías
+Buscar una obra o artista…
+Buscar obras, artistas o descripciones
+Disponibilidad
+Todas las obras
+Disponibles
+Reservadas
+Vendidas
+Orden de las obras
+Más recientes
+Menor precio
+Mayor precio
+Volver a cargar →
+Feed de pinturas
+Un espacio para nuevas historias.
+Todavía no hay pinturas publicadas.
+Limpiar filtros →
+No encontramos esa obra.
+Tus obras favoritas, en un lugar.
+Prueba otra búsqueda o cambia los filtros.
+Dale corazón a una obra para guardarla aquí.
+Este artista todavía no ha publicado pinturas.
+Las pinturas que se publiquen aparecerán aquí.
+ARTE ORIGINAL. CONEXIONES REALES.
+Volver arriba
+Este perfil no está disponible. Explora las obras de la comunidad.
+Nogal — Arte con un lugar
+Favoritos — Nogal
+Notificaciones — Nogal
+Artistas — Nogal
+Todas
+Paisaje
+Botánica
+Abstracto
+Otra
+{n} obra
+{n} obras
+Disponible
+Reservada
+Vendida
+Precio no publicado
+Ver {title}
+Ver obra ↗
+Ver detalles de {title}
+Imagen no disponible
+Tu próxima pintura, aquí
+Dar corazón a {title}. {count} corazones
+Quitar corazón de {title}. {count} corazones
+Inicia sesión para dar un corazón a {title}. {count} corazones
+Inicia sesión para dar un corazón
+Comentarios ({n})
+Comentarios de {title}
+Sé la primera persona en comentar esta obra.
+Artista
+Borrar comentario
+Tu comentario
+Comparte lo que te inspira esta obra…
+Máximo 500 caracteres. Tu comentario será público.
+Publicar comentario
+Escribe un comentario.
+Inicia sesión para comentar →
+Editar
+Eliminar
+¿Eliminar «{title}»? Esta acción no se puede deshacer.
+Artista de la obra
+Técnica
+Formato
+Marco
+Año
+Descripción de la imagen
+Etiquetas de la imagen
+Algunas etiquetas se muestran en español porque todavía no tienen traducción.
+Cerrar detalles
+ARTISTA EN NOGAL
+Un espacio para compartir su mirada a través del arte.
+{n} pintura
+{n} pinturas
+{n} disponible
+{n} disponibles
+Editar perfil
+Artista en Nogal
+Descubre sus pinturas y su forma de ver el mundo.
+Ver perfil ↗
+Notificaciones: {n} sin leer
+Aquí verás los comentarios que otras personas hagan en tus cuadros.
+Leída
+Nueva
+{actor} comentó en «{title}»
+Esta obra ya no está disponible.
+Cerrar formulario
+TU PRÓXIMA OBRA
+Comparte tu mirada.
+Tu imagen aparecerá en la galería para todos los visitantes.
+Adjuntar imagen
+JPG, PNG o WebP. Máximo 19 MB.
+Título
+Ej. Luz de invierno
+Nombre del artista

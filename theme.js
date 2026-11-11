@@ -7,7 +7,8 @@
     const button = document.getElementById('themeToggle');
     if (button) {
       button.textContent = value === 'dark' ? '☀' : '☾';
-      button.setAttribute('aria-label', value === 'dark' ? 'Activar modo claro' : 'Activar modo oscuro');
+            const t = window.nogalI18n?.t || (text => text);
+      button.setAttribute('aria-label', t(value === 'dark' ? 'Activar modo claro' : 'Activar modo oscuro'));
       button.setAttribute('title', button.getAttribute('aria-label'));
       button.setAttribute('aria-pressed', String(value === 'dark'));
     }
@@ -21,6 +22,7 @@
       try { localStorage.setItem('nogal-theme', theme); } catch {}
     });
   });
+    window.addEventListener('nogal:language', () => apply(theme));
   window.addEventListener('storage', event => {
     if (event.key === 'nogal-theme') { theme = event.newValue === 'dark' ? 'dark' : 'light'; apply(theme); }
   });

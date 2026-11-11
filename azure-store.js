@@ -71,14 +71,14 @@ async function list() {
   return resources.map(({ _rid, _self, _etag, _attachments, _ts, kind, ...work }) => work);
 }
 
-async function analyze(bytes) {
+async function analyze(bytes, language = 'es') {
   const endpoint = process.env.VISION_ENDPOINT;
   const key = process.env.VISION_KEY;
   if (!endpoint) throw new Error('El análisis de imágenes no está configurado.');
   const authentication = key ? { 'Ocp-Apim-Subscription-Key': key }
     : { Authorization: `Bearer ${(await credential.getToken('https://cognitiveservices.azure.com/.default')).token}` };
   const url = new URL('/computervision/imageanalysis:analyze', endpoint);
-  url.search = new URLSearchParams({ 'api-version': '2024-02-01', features: 'tags', language: 'es' });
+  url.search = new URLSearchParams({ 'api-version': '2024-02-01', features: 'tags', language });
   const response = await fetch(url, { method: 'POST', headers: { ...authentication, 'Content-Type': 'application/octet-stream' }, body: bytes, signal: AbortSignal.timeout(45000) });
   if (!response.ok) throw new Error('No se pudo analizar la imagen. Comprueba el formato o inténtalo más tarde.');
   const result = await response.json();
@@ -95,11 +95,11 @@ async function saveWork(work, bytes, type, previous) {
   if (remaining.length >= 500 || remaining.reduce((total, entry) => total + (entry.byteSize || 0), 0) + bytes.length > 500 * 1024 * 1024) {
     throw new Error('La galería alcanzó su límite de almacenamiento. Contacta a la persona responsable.');
   }
-  const labels = await analyze(bytes);
+  const [labels, labelsEn] = await Promise.all([analyze(bytes, 'es'), analyze(bytes, 'en').catch(() => [])]);
   const filename = work.imageUrl.split('/').pop();
   const blob = images.getBlockBlobClient(filename);
   await blob.uploadData(bytes, { blobHTTPHeaders: { blobContentType: `image/${type}` } });
-  const document = { ...work, byteSize: bytes.length, labels, processedAt: new Date().toISOString(), analysisProvider: 'Azure AI Vision', kind: 'artwork' };
+  const document = { ...work, byteSize: bytes.length, labels, labelsEn, processedAt: new Date().toISOString(), analysisProvider: 'Azure AI Vision', kind: 'artwork' };
   let saved = document;
   try {
     if (previous) saved = await updateArtwork(work.id, current => ({ ...document, likedBy: current.likedBy || [], comments: current.comments || [] }));

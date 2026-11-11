@@ -12,7 +12,7 @@ test('perfiles y catálogo: publicación, venta, edición, permisos y persistenc
   const names = ['Astid', 'Zulema', 'Elvia'];
   const salt='a'.repeat(32);
   const users = names.map(name => ({ id: name.toLowerCase(), name, username: name, passwordSalt: salt, passwordHash: scryptSync(password, salt, 64).toString('hex') }));
-  for (const file of ['server.js', 'gallery-store.js', 'azure-store.js', 'user-accounts.js', 'index.html', 'login.html', 'theme.js']) await fs.copyFile(path.join(__dirname, '..', file), path.join(directory, file));
+  for (const file of ['server.js', 'gallery-store.js', 'azure-store.js', 'user-accounts.js', 'index.html', 'login.html', 'theme.js', 'i18n.js']) await fs.copyFile(path.join(__dirname, '..', file), path.join(directory, file));
   await fs.mkdir(path.join(directory, 'data'));
   await fs.writeFile(path.join(directory, 'data', 'users.json'), JSON.stringify({ users }));
   let child;
@@ -97,6 +97,7 @@ test('perfiles y catálogo: publicación, venta, edición, permisos y persistenc
     const profilesAfter = (await (await fetch(origin + '/api/profiles')).json()).profiles;
     assert.equal(profilesAfter.find(entry => entry.id === 'elvia').name, 'Elvia');
     assert.equal((await fetch(origin + '/theme.js')).status, 200);
+    assert.equal((await fetch(origin + '/i18n.js')).status, 200);
     const all = (await (await fetch(origin + '/api/artworks')).json()).works;
     const own = all.find(work => work.userId === 'astid');
     const other = all.find(work => work.userId === 'elvia');

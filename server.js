@@ -292,7 +292,7 @@ async function handle(request, response) {
   try { pathname = decodeURIComponent(url.pathname); } catch { return json(response, 400, { error: 'Ruta inválida.' }); }
   const file = path.resolve(root, '.' + (pathname === '/' ? '/index.html' : pathname));
   const relative = path.relative(root, file).replaceAll('\\', '/');
-  if (relative.startsWith('../') || path.isAbsolute(relative) || !(['index.html', 'login.html', 'usuarios.html', 'style.css', 'gallery.css', 'api.js', 'login.js', 'usuarios.js', 'theme.js'].includes(relative) || relative.startsWith('assets/'))) return json(response, 404, { error: 'Archivo no disponible.' });
+  if (relative.startsWith('../') || path.isAbsolute(relative) || !(['index.html', 'login.html', 'usuarios.html', 'style.css', 'gallery.css', 'api.js', 'login.js', 'usuarios.js', 'theme.js', 'i18n.js'].includes(relative) || relative.startsWith('assets/'))) return json(response, 404, { error: 'Archivo no disponible.' });
   try {
     const data = await fs.readFile(file);
     const types = { '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': 'text/javascript', '.svg': 'image/svg+xml', '.woff2': 'font/woff2' };

@@ -1,3 +1,4 @@
+const { t } = window.nogalI18n;
 const room = document.getElementById('room');
 const lampSwitch = document.getElementById('lampSwitch');
 const cord = document.getElementById('cordPath');
@@ -18,8 +19,8 @@ function setLamp(on) {
   panel.setAttribute('aria-hidden', String(!on));
   closedCard.setAttribute('aria-hidden', String(on));
   lampSwitch.setAttribute('aria-pressed', String(on));
-  lampSwitch.setAttribute('aria-label', on ? 'Apagar lámpara y ocultar el acceso' : 'Encender lámpara y mostrar el acceso');
-  status.textContent = on ? 'Lámpara encendida. El formulario de acceso está disponible.' : 'Lámpara apagada.';
+    lampSwitch.setAttribute('aria-label', t(on ? 'Apagar lámpara y ocultar el acceso' : 'Encender lámpara y mostrar el acceso'));
+  status.textContent = t(on ? 'Lámpara encendida. El formulario de acceso está disponible.' : 'Lámpara apagada.');
 }
 
 function resetCord() {
@@ -83,7 +84,7 @@ togglePassword.addEventListener('click', () => {
   const show = password.type === 'password';
   password.type = show ? 'text' : 'password';
   togglePassword.setAttribute('aria-pressed', String(show));
-  togglePassword.setAttribute('aria-label', show ? 'Ocultar contraseña' : 'Mostrar contraseña');
+  togglePassword.setAttribute('aria-label', t(show ? 'Ocultar contraseña' : 'Mostrar contraseña'));
 });
 
 document.getElementById('loginForm').addEventListener('submit', async (event) => {
@@ -94,16 +95,22 @@ document.getElementById('loginForm').addEventListener('submit', async (event) =>
   button.disabled = true;
   try {
     const result = await nogalApi.request('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: document.getElementById('username').value, password: password.value }) });
-    if (!result.user?.name) throw new Error('La respuesta del servidor no es válida.');
+    if (!result.user?.name) throw new Error(t('La respuesta del servidor no es válida.'));
     password.value = '';
     await nogalApi.goToGallery();
   } catch (error) {
     console.error('Error de acceso a Nogal:', { message: error.message, origin: location.origin });
-    message.textContent = `No se pudo iniciar sesión: ${error.message}`;
+    message.textContent = t('No se pudo iniciar sesión: {error}', { error: t(error.message) });
     message.hidden = false;
   } finally { button.disabled = false; }
 });
 setLamp(false);
+
+window.addEventListener('nogal:language', () => {
+  setLamp(isOn);
+  const show = password.type === 'text';
+  togglePassword.setAttribute('aria-label', t(show ? 'Ocultar contraseña' : 'Mostrar contraseña'));
+});
 
 
 document.getElementById('exploreGallery').addEventListener('click', () => {

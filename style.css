@@ -76,3 +76,12 @@
 .room .submit{background:#49372D;border-color:#49372D;color:#F1E8DC}
 .room .submit:hover{background:#30241F}
 .room .card-divider{background:#D8C6AE}
+
+/* Selector de idioma en el acceso: visible con la lámpara apagada y encendida. */
+.login-lang{position:absolute;top:18px;right:22px;z-index:8;display:flex;gap:4px;border:1px solid #6B5141;border-radius:7px;padding:3px;transition:border-color 1s}
+.login-lang .lang-option{border:0;background:none;color:#D8C6AE;font-size:11px;padding:7px 10px;border-radius:5px;transition:color 1s,background-color .2s}
+.login-lang .lang-option[aria-pressed=true]{background:#49372D;color:#F1E8DC}
+.room.on .login-lang{border-color:#B9A38D}
+.room.on .login-lang .lang-option{color:#6B5141}
+.room.on .login-lang .lang-option[aria-pressed=true]{background:#D8C6AE;color:#211A17}
+@media(max-width:740px){.login-lang{position:relative;top:auto;right:auto;margin:16px auto 0;width:max-content}}
